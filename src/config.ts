@@ -1,9 +1,9 @@
 export type CarrierConfig = {
   USPS_API_KEY?: string;
-  FEDEX_CLIENT_ID?: string;
-  FEDEX_SECRET?: string;
-  UPS_CLIENT_ID?: string;
-  UPS_SECRET?: string;
+  USPS_BASE_URL?: string;
+  FEDEX_API_KEY?: string;
+  FEDEX_BASE_URL?: string;
+
 };
 
 let config: CarrierConfig = {};
