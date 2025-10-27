@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
+    "test": "vitest",
     "build": "tsup src/index.ts --format esm,cjs --dts",
     "generate:usps": "openapi --input https://developers.usps.com/sites/default/files/apidoc_specs/oauth2_3_update.yaml --output src/usps/generated --client fetch",
     "generate:fedex:address": "openapi --input specs/fedex/address-validation.json --output src/fedex/address/generated --client fetch",
@@ -11,16 +12,17 @@
     "generate:fedex:ship": "openapi --input specs/fedex/ship.json --output src/fedex/ship/generated --client fetch",
     "generate:fedex": "npm run generate:fedex:address && npm run generate:fedex:availability && npm run generate:fedex:rates && npm run generate:fedex:ship",
     "generate:all": "npm run generate:usps && npm run generate:fedex"
-
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
   "devDependencies": {
+    "@types/jest": "^30.0.0",
     "openapi-typescript-codegen": "^0.29.0",
     "tsup": "^8.5.0",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.3"
   },
   "dependencies": {
     "cross-fetch": "^4.1.0"
