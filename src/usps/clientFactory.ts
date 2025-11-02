@@ -1,18 +1,20 @@
 import { getConfig } from "../config";
 import { getLogger } from "../logger";
 import { ShipstackError } from "../errors";
+import { getUspsAccessToken } from "./auth/index";
 
-export function configureUspsClient(OpenAPI: any, module: string) {
-  const { USPS_API_KEY, USPS_BASE_URL } = getConfig();
+export async function configureUspsClient(OpenAPI: any, module: string) {
+  const { USPS_BASE_URL } = getConfig();
   const log = getLogger();
 
-  if (!USPS_API_KEY) {
-    log.error("USPS_API_KEY is missing.");
-    throw new ShipstackError("Missing USPS API key", "usps");
+  const token = await getUspsAccessToken();
+  if (!token) {
+    log.error("Failed to retrieve USPS token.");
+    throw new ShipstackError("Missing USPS token", "usps");
   }
 
   OpenAPI.BASE = USPS_BASE_URL ?? "https://api.usps.com";
-  OpenAPI.TOKEN = USPS_API_KEY;
+  OpenAPI.TOKEN = token;
 
   log.debug(`USPS ${module} client initialized.`);
 }
