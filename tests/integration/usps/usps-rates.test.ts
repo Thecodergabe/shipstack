@@ -1,16 +1,29 @@
-import { setConfig } from "../src";
-import { priceType, ResourcesService, RateDetails } from "../src/usps/rates/generated/index";
-import { BaseRatesQuery } from "../src/usps/rates/generated/models/BaseRatesQuery";
-import { ExtraServiceRateQuery } from "../src/usps/rates/generated/models/ExtraServiceRateQuery";
-import { RateListQuery } from "../src/usps/rates/generated/models/RateListQuery";
-import { TotalRatesQuery } from "../src/usps/rates/generated/models/TotalRatesQuery";
-import { LetterRatesQuery } from "../src/usps/rates/generated/models/LetterRatesQuery";
-import { mailClass } from "../src/usps/rates/generated/models/mailClass";
-import { mailClassOutboundOnly } from "../src/usps/rates/generated/models/mailClassOutboundOnly";
-import { ExtraService } from "../src/usps/rates/generated/models/ExtraService";
-import { ExtraServiceRateQuery as ExtraServiceRateQueryNS } from "../src/usps/rates/generated/models/ExtraServiceRateQuery";
+import { setConfig } from "../../../src";
+import {
+  priceType,
+  ResourcesService,
+  RateDetails,
+} from "../../../src/usps/rates/generated/index";
 
-describe("USPS Rates Suite", () => {
+import { BaseRatesQuery } from "../../../src/usps/rates/generated/models/BaseRatesQuery";
+import { ExtraServiceRateQuery } from "../../../src/usps/rates/generated/models/ExtraServiceRateQuery";
+import { RateListQuery } from "../../../src/usps/rates/generated/models/RateListQuery";
+import { TotalRatesQuery } from "../../../src/usps/rates/generated/models/TotalRatesQuery";
+import { LetterRatesQuery } from "../../../src/usps/rates/generated/models/LetterRatesQuery";
+
+import { mailClass } from "../../../src/usps/rates/generated/models/mailClass";
+import { mailClassOutboundOnly } from "../../../src/usps/rates/generated/models/mailClassOutboundOnly";
+import { ExtraService } from "../../../src/usps/rates/generated/models/ExtraService";
+import { ExtraServiceRateQuery as ExtraServiceRateQueryNS } from "../../../src/usps/rates/generated/models/ExtraServiceRateQuery";
+
+import { describe, it, expect, beforeAll } from "vitest";
+
+// Only run this suite if USPS keys exist
+const hasUspsKeys =
+  !!process.env.USPS_API_KEY &&
+  !!process.env.USPS_BASE_URL;
+
+(hasUspsKeys ? describe : describe.skip)("USPS Rates Suite", () => {
   beforeAll(() => {
     setConfig({
       USPS_API_KEY: process.env.USPS_API_KEY,
@@ -19,18 +32,24 @@ describe("USPS Rates Suite", () => {
   });
 
   it("should return a base rate for a package", async () => {
-    const payload = {
+    const payload: BaseRatesQuery = {
       originZIPCode: "97006",
       destinationZIPCode: "10001",
       weight: 2.0,
       length: 10,
       width: 6,
       height: 4,
-      processingCategory: RateDetails.processingCategory.MACHINABLE,
+      processingCategory: BaseRatesQuery.processingCategory.MACHINABLE,
       mailClass: mailClass.PRIORITY_MAIL,
-    } as BaseRatesQuery;
+
+      // REQUIRED FIELDS YOU WERE MISSING:
+      rateIndicator: BaseRatesQuery.rateIndicator.SP, // Single Piece
+      destinationEntryFacilityType: BaseRatesQuery.destinationEntryFacilityType.NONE,
+      priceType: priceType.RETAIL,
+    };
 
     const response = await ResourcesService.postBaseRatesSearch(payload);
+
     expect(response.price).toBeDefined();
     expect(response.mailClass).toBe(mailClass.PRIORITY_MAIL);
   });
@@ -47,6 +66,7 @@ describe("USPS Rates Suite", () => {
     };
 
     const response = await ResourcesService.postExtraServiceRatesSearch(payload);
+
     expect(response.extraServices?.length).toBeGreaterThan(0);
     expect(response.extraServices?.[0]?.price).toBeDefined();
   });
@@ -63,6 +83,7 @@ describe("USPS Rates Suite", () => {
     };
 
     const response = await ResourcesService.postRateList(payload);
+
     expect(response.rates?.length).toBeGreaterThan(0);
     expect(response.rates?.[0]?.price).toBeDefined();
   });
@@ -79,6 +100,7 @@ describe("USPS Rates Suite", () => {
     };
 
     const response = await ResourcesService.postTotalRatesSearch(payload);
+
     expect(response.totalPrice).toBeDefined();
     expect(response.breakdown?.baseRate).toBeDefined();
     expect(response.breakdown?.extraServices?.length).toBeGreaterThan(0);
@@ -88,12 +110,13 @@ describe("USPS Rates Suite", () => {
     const payload: LetterRatesQuery = {
       weight: 1.0,
       length: 6,
-      thickness: .007,
+      thickness: 0.007,
       height: 0.25,
-      processingCategory:  LetterRatesQuery.processingCategory.LETTERS,
+      processingCategory: LetterRatesQuery.processingCategory.LETTERS,
     };
 
     const response = await ResourcesService.postLetterRatesSearch(payload);
+
     expect(response.price).toBeDefined();
     expect(response.mailClass).toBe(mailClass.USPS_GROUND_ADVANTAGE);
   });

@@ -1,0 +1,11 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`USPS Tracking Snapshot > matches tracking event structure 1`] = `
+[
+  {
+    "date": "2024-01-01",
+    "location": "Portland, OR",
+    "status": "In Transit",
+  },
+]
+`;

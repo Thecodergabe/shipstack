@@ -1,6 +1,12 @@
-import { setConfig, createFedexRatesClient } from "../src";
+import { setConfig, createFedexRatesClient } from "../../../src";
+import { describe, it, expect, beforeAll } from "vitest";
 
-describe("FedEx Rate Client", () => {
+// Only run this suite if FedEx keys exist
+const hasFedexKeys =
+  !!process.env.FEDEX_API_KEY &&
+  !!process.env.FEDEX_BASE_URL;
+
+(hasFedexKeys ? describe : describe.skip)("FedEx Rate Client", () => {
   beforeAll(() => {
     setConfig({
       FEDEX_API_KEY: process.env.FEDEX_API_KEY,

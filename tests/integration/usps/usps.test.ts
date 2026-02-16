@@ -1,19 +1,31 @@
-import { setConfig, createUspsAuthClient } from "../src";
-import { TokenRequest } from "../src/usps/generated/models/TokenRequest";
+import { setConfig, createUspsAuthClient } from "../../../src";
+import { TokenRequest } from "../../../src/usps/generated/models/TokenRequest";
+import { describe, it, expect, beforeAll } from "vitest";
 
-describe("USPS Auth Client", () => {
+// Only run when USPS auth keys exist
+const hasUspsAuthKeys =
+  !!process.env.USPS_API_KEY &&
+  !!process.env.USPS_BASE_URL &&
+  !!process.env.USPS_CLIENT_ID &&
+  !!process.env.USPS_CLIENT_SECRET;
+
+(hasUspsAuthKeys ? describe : describe.skip)("USPS Auth Client", () => {
   beforeAll(() => {
     setConfig({
       USPS_API_KEY: process.env.USPS_API_KEY,
       USPS_BASE_URL: process.env.USPS_BASE_URL,
+      USPS_CLIENT_ID: process.env.USPS_CLIENT_ID,
+      USPS_CLIENT_SECRET: process.env.USPS_CLIENT_SECRET,
     });
   });
 
   it("should fetch OAuth2 token", async () => {
     const usps = createUspsAuthClient();
+
     const client_id = process.env.USPS_CLIENT_ID;
     const client_secret = process.env.USPS_CLIENT_SECRET;
 
+    // Redundant but safe
     if (!client_id || !client_secret) {
       throw new Error("Missing USPS credentials");
     }

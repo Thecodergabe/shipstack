@@ -1,6 +1,12 @@
-import { setConfig, createFedexAddressClient } from "../src";
+import { setConfig, createFedexAddressClient } from "../../../src";
+import { describe, it, expect, beforeAll } from "vitest";
 
-describe("FedEx Address Client", () => {
+// Only run this suite if keys exist
+const hasFedexKeys =
+  !!process.env.FEDEX_API_KEY &&
+  !!process.env.FEDEX_BASE_URL;
+
+(hasFedexKeys ? describe : describe.skip)("FedEx Address Client", () => {
   beforeAll(() => {
     setConfig({
       FEDEX_API_KEY: process.env.FEDEX_API_KEY,
@@ -28,6 +34,8 @@ describe("FedEx Address Client", () => {
       }
     );
 
-    expect(response.output?.resolvedAddresses?.[0]?.parsedPostalCode?.base).toBe("97006");
+    expect(
+      response.output?.resolvedAddresses?.[0]?.parsedPostalCode?.base
+    ).toBe("97006");
   });
 });

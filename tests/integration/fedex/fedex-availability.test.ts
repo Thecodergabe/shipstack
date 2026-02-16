@@ -1,12 +1,20 @@
 import {
   setConfig,
   createFedexAvailabilityClient,
-} from "../src";
-import { DefaultService } from "../src/fedex/availability/generated";
-import { body } from "../src/fedex/availability/generated/models/body";
-import { TransitTimeOutputVO } from "../src/fedex/availability/generated/models/TransitTimeOutputVO";
+} from "../../../src";
 
-describe("FedEx Availability Client", () => {
+import { DefaultService } from "../../../src/fedex/availability/generated";
+import { body } from "../../../src/fedex/availability/generated/models/body";
+import { TransitTimeOutputVO } from "../../../src/fedex/availability/generated/models/TransitTimeOutputVO";
+
+import { describe, it, expect, beforeAll } from "vitest";
+
+// Only run this suite if FedEx keys exist
+const hasFedexKeys =
+  !!process.env.FEDEX_API_KEY &&
+  !!process.env.FEDEX_BASE_URL;
+
+(hasFedexKeys ? describe : describe.skip)("FedEx Availability Client", () => {
   beforeAll(() => {
     setConfig({
       FEDEX_API_KEY: process.env.FEDEX_API_KEY,
@@ -40,15 +48,17 @@ describe("FedEx Availability Client", () => {
       },
     };
 
-    const response: TransitTimeOutputVO = await DefaultService.retrieveServicesAndTransitTimes(
-      "application/json",
-      token,
-      "txn-availability-001",
-      "en_US",
-      requestBody
-    );
+    const response: TransitTimeOutputVO =
+      await DefaultService.retrieveServicesAndTransitTimes(
+        "application/json",
+        token,
+        "txn-availability-001",
+        "en_US",
+        requestBody
+      );
 
-    const transitDetails = response.output?.transitTimes?.[0]?.transitTimeDetails?.[0];
+    const transitDetails =
+      response.output?.transitTimes?.[0]?.transitTimeDetails?.[0];
     const commit = transitDetails?.commit;
 
     expect(response.transactionId).toBeDefined();

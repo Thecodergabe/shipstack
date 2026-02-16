@@ -1,17 +1,24 @@
 import {
   setConfig,
   createFedexShipClient,
-} from "../src";
-import { Full_Schema_Ship } from "../src/fedex/ship/generated";
-import { RequestedShipment_1 } from "../src/fedex/ship/generated";
-import { ShipperAccountNumber } from "../src/fedex/ship/generated";
-import { LABELRESPONSEOPTIONS } from "../src/fedex/ship/generated";
-import { Dimensions } from "../src/fedex/ship/generated";
-import { Weight } from "../src/fedex/ship/generated";
-import { Payment } from "../src/fedex/rates/generated";
-import { LabelSpecification } from "../src/fedex/ship/generated/models/LabelSpecification";
+} from "../../../src";
 
-describe("FedEx Ship Client", () => {
+import { Full_Schema_Ship } from "../../../src/fedex/ship/generated";
+import { RequestedShipment_1 } from "../../../src/fedex/ship/generated";
+import { LABELRESPONSEOPTIONS } from "../../../src/fedex/ship/generated";
+import { Dimensions } from "../../../src/fedex/ship/generated";
+import { Weight } from "../../../src/fedex/ship/generated";
+import { Payment } from "../../../src/fedex/rates/generated";
+import { LabelSpecification } from "../../../src/fedex/ship/generated/models/LabelSpecification";
+
+import { describe, it, expect, beforeAll } from "vitest";
+
+// Only run this suite if FedEx keys exist
+const hasFedexKeys =
+  !!process.env.FEDEX_API_KEY &&
+  !!process.env.FEDEX_BASE_URL;
+
+(hasFedexKeys ? describe : describe.skip)("FedEx Ship Client", () => {
   beforeAll(() => {
     setConfig({
       FEDEX_API_KEY: process.env.FEDEX_API_KEY,
@@ -25,7 +32,7 @@ describe("FedEx Ship Client", () => {
 
     const shipmentPayload: Full_Schema_Ship = {
       accountNumber: {
-        value: "123456789", // Replace with your actual FedEx account number
+        value: "123456789", // user must replace with their own account number
       },
       labelResponseOptions: LABELRESPONSEOPTIONS.LABEL,
       requestedShipment: {
@@ -106,6 +113,7 @@ describe("FedEx Ship Client", () => {
     );
 
     const detail = (response.output as any).completedShipmentDetail;
+
     expect(detail).toBeDefined();
     expect(detail.masterTrackingNumber).toBeDefined();
   });
