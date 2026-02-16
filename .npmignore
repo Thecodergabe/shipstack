@@ -1,0 +1,26 @@
+# Dependencies
+node_modules/
+
+# Testing
+tests/
+coverage/
+*.test.ts
+
+# Source code (we publish the build)
+src/
+specs/
+
+# Config files
+tsconfig.json
+vitest.config.ts
+
+# Development
+.env
+.env.local
+.env.*.local
+.git
+.gitignore
+.DS_Store
+
+# Documentation
+CONTRIBUTING.md

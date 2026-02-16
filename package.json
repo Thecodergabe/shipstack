@@ -1,8 +1,48 @@
 {
   "name": "shipstack",
   "version": "1.0.0",
-  "main": "index.js",
+  "description": "Typed, modular shipping API wrapper for USPS and FedEx with OpenAPI-generated clients, logging, and error handling",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "module": "dist/index.mjs",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md"
+  ],
+  "keywords": [
+    "shipping",
+    "usps",
+    "fedex",
+    "api",
+    "openapi",
+    "typescript",
+    "wrapper",
+    "client"
+  ],
+  "homepage": "https://github.com/Thecodergabe/shipstack#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Thecodergabe/shipstack.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Thecodergabe/shipstack/issues"
+  },
+  "author": "Gabriel Rodriguez",
+  "license": "ISC",
+  "engines": {
+    "node": ">=16.0.0"
+  },
   "scripts": {
+    "prepare": "npm run build",
+    "prepublishOnly": "npm run test && npm run build",
     "test": "vitest",
     "build": "tsup src/index.ts --format esm,cjs --dts",
     "generate:usps:auth": "openapi --input https://developers.usps.com/sites/default/files/apidoc_specs/oauth2_3_update.yaml --output src/usps/auth/generated --client fetch",
@@ -27,11 +67,6 @@
     "generate:fedex:ship": "openapi --input specs/fedex/ship.json --output src/fedex/ship/generated --client fetch",
     "generate:fedex": "npm run generate:fedex:address && npm run generate:fedex:availability && npm run generate:fedex:rates && npm run generate:fedex:ship",
     "generate:all": "npm run generate:usps && npm run generate:fedex"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
   "devDependencies": {
     "@types/jest": "^30.0.0",
     "openapi-typescript-codegen": "^0.29.0",
