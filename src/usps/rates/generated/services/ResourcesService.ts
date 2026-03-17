@@ -14,9 +14,9 @@ import type { RateListQuery } from '../models/RateListQuery';
 import type { TotalRatesQuery } from '../models/TotalRatesQuery';
 import type { TotalRatesQueryResult } from '../models/TotalRatesQueryResult';
 import type { CancelablePromise } from '../core/CancelablePromise';
-import { OpenAPI } from '../core/OpenAPI';
-import { request as __request } from '../core/request';
+import type { BaseHttpRequest } from '../core/BaseHttpRequest';
 export class ResourcesService {
+    constructor(public readonly httpRequest: BaseHttpRequest) {}
     /**
      * Performs a search for base price using the submitted rate ingredients.
      * Returns an eligible price given a set of package rate ingredients.
@@ -25,10 +25,10 @@ export class ResourcesService {
      * @returns any Other unanticipated errors that may occur.
      * @throws ApiError
      */
-    public static postBaseRatesSearch(
+    public postBaseRatesSearch(
         requestBody?: BaseRatesQuery,
     ): CancelablePromise<BaseRateOption | any> {
-        return __request(OpenAPI, {
+        return this.httpRequest.request({
             method: 'POST',
             url: '/base-rates/search',
             body: requestBody,
@@ -53,10 +53,10 @@ export class ResourcesService {
      * @returns any Other unanticipated errors that may occur.
      * @throws ApiError
      */
-    public static postExtraServiceRatesSearch(
+    public postExtraServiceRatesSearch(
         requestBody?: (ExtraServiceRateQuery | ExtraServiceRateQueryWithSingleExtraService),
     ): CancelablePromise<ExtraServiceRateDetails | any> {
-        return __request(OpenAPI, {
+        return this.httpRequest.request({
             method: 'POST',
             url: '/extra-service-rates/search',
             body: requestBody,
@@ -88,10 +88,10 @@ export class ResourcesService {
      * @returns any Other unanticipated errors that may occur.
      * @throws ApiError
      */
-    public static postRateList(
+    public postRateList(
         requestBody?: RateListQuery,
     ): CancelablePromise<BaseRatesQueryResult | any> {
-        return __request(OpenAPI, {
+        return this.httpRequest.request({
             method: 'POST',
             url: '/base-rates-list/search',
             body: requestBody,
@@ -114,10 +114,10 @@ export class ResourcesService {
      * @returns any Other unanticipated errors that may occur.
      * @throws ApiError
      */
-    public static postTotalRatesSearch(
+    public postTotalRatesSearch(
         requestBody?: TotalRatesQuery,
     ): CancelablePromise<TotalRatesQueryResult | any> {
-        return __request(OpenAPI, {
+        return this.httpRequest.request({
             method: 'POST',
             url: '/total-rates/search',
             body: requestBody,
@@ -141,10 +141,10 @@ export class ResourcesService {
      * @returns any Other unanticipated errors that may occur.
      * @throws ApiError
      */
-    public static postLetterRatesSearch(
+    public postLetterRatesSearch(
         requestBody?: LetterRatesQuery,
     ): CancelablePromise<LetterRatesOption | any> {
-        return __request(OpenAPI, {
+        return this.httpRequest.request({
             method: 'POST',
             url: '/letter-rates/search',
             body: requestBody,

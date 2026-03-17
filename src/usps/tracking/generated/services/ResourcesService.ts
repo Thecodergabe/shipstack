@@ -10,9 +10,9 @@ import type { TrackingNotificationAcknowledgement } from '../models/TrackingNoti
 import type { TrackingNotificationRequest } from '../models/TrackingNotificationRequest';
 import type { TrackingRequest } from '../models/TrackingRequest';
 import type { CancelablePromise } from '../core/CancelablePromise';
-import { OpenAPI } from '../core/OpenAPI';
-import { request as __request } from '../core/request';
+import type { BaseHttpRequest } from '../core/BaseHttpRequest';
 export class ResourcesService {
+    constructor(public readonly httpRequest: BaseHttpRequest) {}
     /**
      * Get package tracking status and delivery information.
      * This API allows users to retrieve detailed information about a specific USPS&#174; package. Using the USPS&#174; Tracking Request, individuals can view the delivery status of various mail items, such as Priority Mail&#174;, Priority Mail Express&#174;, and Package Services (including Parcel Post&#174;, Bound Printed Matter, Library Mail, and Media Mail&#174;) that have USPS&#174; Tracking. By collecting mail class and service information from Product Tracking Systems, USPS&#174; Tracking provides users with delivery status updates. By entering the tracking number, users can view the detailed delivery status of single Priority Mail&#174; and Package Service parcels with Delivery Confirmation.
@@ -24,10 +24,10 @@ export class ResourcesService {
      * @returns MultiStatusResponse Multi-status Response
      * @throws ApiError
      */
-    public static getPackageTracking(
+    public getPackageTracking(
         requestBody: TrackingRequest,
     ): CancelablePromise<TrackingDetails | any | MultiStatusResponse> {
-        return __request(OpenAPI, {
+        return this.httpRequest.request({
             method: 'POST',
             url: '/tracking',
             body: requestBody,
@@ -54,11 +54,11 @@ export class ResourcesService {
      * @returns TrackingNotificationAcknowledgement Successful posting of tracking notification request.
      * @throws ApiError
      */
-    public static postPackageTrackingNotifications(
+    public postPackageTrackingNotifications(
         trackingNumber: string,
         requestBody: TrackingNotificationRequest,
     ): CancelablePromise<any | TrackingNotificationAcknowledgement> {
-        return __request(OpenAPI, {
+        return this.httpRequest.request({
             method: 'POST',
             url: '/tracking/{trackingNumber}/notifications',
             path: {
@@ -87,11 +87,11 @@ export class ResourcesService {
      * @returns ProofOfDeliveryAcknowledgement Successful posting of the delivery record request.
      * @throws ApiError
      */
-    public static proofOfDelivery(
+    public proofOfDelivery(
         trackingNumber: string,
         requestBody: ProofOfDeliveryRequest,
     ): CancelablePromise<any | ProofOfDeliveryAcknowledgement> {
-        return __request(OpenAPI, {
+        return this.httpRequest.request({
             method: 'POST',
             url: '/tracking/{trackingNumber}/proof-of-delivery',
             path: {

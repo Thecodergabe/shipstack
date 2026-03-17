@@ -5,9 +5,9 @@
 import type { body } from '../models/body';
 import type { RatcResponseVO } from '../models/RatcResponseVO';
 import type { CancelablePromise } from '../core/CancelablePromise';
-import { OpenAPI } from '../core/OpenAPI';
-import { request as __request } from '../core/request';
+import type { BaseHttpRequest } from '../core/BaseHttpRequest';
 export class DefaultService {
+    constructor(public readonly httpRequest: BaseHttpRequest) {}
     /**
      * Rate and Transit times
      * This endpoint provides the ability to retrieve rate quotes and optionalll transit information. The rate is calculated based on the origin and destination of the shipment. Additional information such as carrier code, service type, or service option can be used to filter the results. If carrier code is provided, the response includes the rate quotes for the specific transportation carrier. This endpoint provides the rates for FedEx Ground and FedEx Express and does not offer rates for FedEx Freight.<br><i>Note: FedEx APIs do not support Cross-Origin Resource Sharing (CORS) mechanism.</i>
@@ -19,14 +19,14 @@ export class DefaultService {
      * @returns RatcResponseVO Success
      * @throws ApiError
      */
-    public static rateAndTransitTimes(
+    public rateAndTransitTimes(
         contentType: string,
         authorization: string,
         xCustomerTransactionId?: string,
         xLocale?: string,
         requestBody?: body,
     ): CancelablePromise<RatcResponseVO> {
-        return __request(OpenAPI, {
+        return this.httpRequest.request({
             method: 'POST',
             url: '/rate/v1/rates/quotes',
             headers: {

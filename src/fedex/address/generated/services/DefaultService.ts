@@ -5,9 +5,9 @@
 import type { AdvcResponseVO } from '../models/AdvcResponseVO';
 import type { body } from '../models/body';
 import type { CancelablePromise } from '../core/CancelablePromise';
-import { OpenAPI } from '../core/OpenAPI';
-import { request as __request } from '../core/request';
+import type { BaseHttpRequest } from '../core/BaseHttpRequest';
 export class DefaultService {
+    constructor(public readonly httpRequest: BaseHttpRequest) {}
     /**
      * Validate Address
      * Use this endpoint to get address resolution details. These details are the outcome of validation and resolution of the input address. An address is stated as resolved when the input address matches the known reference data.<br><i>Note: FedEx APIs do not support Cross-Origin Resource Sharing (CORS) mechanism.<i>
@@ -19,14 +19,14 @@ export class DefaultService {
      * @returns AdvcResponseVO Success
      * @throws ApiError
      */
-    public static validateAddress(
+    public validateAddress(
         contentType: string,
         authorization: string,
         xCustomerTransactionId?: string,
         xLocale?: string,
         requestBody?: body,
     ): CancelablePromise<AdvcResponseVO> {
-        return __request(OpenAPI, {
+        return this.httpRequest.request({
             method: 'POST',
             url: '/address/v1/addresses/resolve',
             headers: {

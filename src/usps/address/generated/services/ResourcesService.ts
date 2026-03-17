@@ -6,9 +6,9 @@ import type { AddressResponse } from '../models/AddressResponse';
 import type { CityStateResponse } from '../models/CityStateResponse';
 import type { ZIPCodeResponse } from '../models/ZIPCodeResponse';
 import type { CancelablePromise } from '../core/CancelablePromise';
-import { OpenAPI } from '../core/OpenAPI';
-import { request as __request } from '../core/request';
+import type { BaseHttpRequest } from '../core/BaseHttpRequest';
 export class ResourcesService {
+    constructor(public readonly httpRequest: BaseHttpRequest) {}
     /**
      * Returns the best standardized address for a given address.
      * Standardizes street addresses including city and street abbreviations as well as providing missing information such as ZIP Code&#8482; and ZIP + 4&#174;.
@@ -26,7 +26,7 @@ export class ResourcesService {
      * @returns any Other unanticipated errors that may occur.
      * @throws ApiError
      */
-    public static getAddress(
+    public getAddress(
         streetAddress: string,
         state: string,
         firm?: string,
@@ -36,7 +36,7 @@ export class ResourcesService {
         zipCode?: string,
         zipPlus4?: string,
     ): CancelablePromise<AddressResponse | any> {
-        return __request(OpenAPI, {
+        return this.httpRequest.request({
             method: 'GET',
             url: '/address',
             query: {
@@ -67,10 +67,10 @@ export class ResourcesService {
      * @returns any Other unanticipated errors that may occur.
      * @throws ApiError
      */
-    public static getCityState(
+    public getCityState(
         zipCode: string,
     ): CancelablePromise<CityStateResponse | any> {
-        return __request(OpenAPI, {
+        return this.httpRequest.request({
             method: 'GET',
             url: '/city-state',
             query: {
@@ -99,7 +99,7 @@ export class ResourcesService {
      * @returns any Other unanticipated errors that may occur.
      * @throws ApiError
      */
-    public static getZipCode(
+    public getZipCode(
         streetAddress: string,
         city: string,
         state: string,
@@ -108,7 +108,7 @@ export class ResourcesService {
         zipCode?: string,
         zipPlus4?: string,
     ): CancelablePromise<ZIPCodeResponse | any> {
-        return __request(OpenAPI, {
+        return this.httpRequest.request({
             method: 'GET',
             url: '/zipcode',
             query: {

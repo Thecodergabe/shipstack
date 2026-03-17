@@ -1,24 +1,33 @@
 import { requestUspsToken } from "./token";
 import { getLogger } from "../../logger";
 import { getCachedToken, setCachedToken } from "./tokenCache";
-import { getConfig } from "../../config";
+import { getUspsConfig } from "../../config";
+import { ShipstackError } from "../../errors";
 
 export async function getUspsAccessToken(): Promise<string> {
   const cached = getCachedToken();
   const log = getLogger();
+  
   if (cached) return cached;
 
-  const { USPS_CLIENT_ID, USPS_CLIENT_SECRET } = getConfig();
-  if (!USPS_CLIENT_ID || !USPS_CLIENT_SECRET) {
-    log.error("getUspsAccessToken: USPS_CLIENT_ID or USPS_CLIENT_SECRET is missing.");
-    log.debug("USPS_CLIENT_ID:", USPS_CLIENT_ID);
-    return Promise.reject(new Error("Missing USPS client credentials"));
-  }
-  const { token, expiresIn } = await requestUspsToken({
-    clientId: USPS_CLIENT_ID,
-    clientSecret: USPS_CLIENT_SECRET,
-  });
+  // Pull from the agnostic config set by the user
+  const { clientId, clientSecret } = getUspsConfig();
 
-  setCachedToken(token, expiresIn);
-  return token;
+  if (!clientId || !clientSecret) {
+    log.error("[USPS] Auth Failed: clientId or clientSecret is missing in config.");
+    throw new ShipstackError("Missing USPS client credentials", "usps");
+  }
+
+  try {
+    const { token, expiresIn } = await requestUspsToken({
+      clientId,
+      clientSecret,
+    });
+
+    setCachedToken(token, expiresIn);
+    return token;
+  } catch (error) {
+    log.error("[USPS] Token request failed", error);
+    throw new ShipstackError("Failed to retrieve USPS access token", "usps", error);
+  }
 }

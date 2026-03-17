@@ -21,58 +21,55 @@
     "shipping",
     "usps",
     "fedex",
+    "ups",
     "api",
     "openapi",
-    "typescript",
-    "wrapper",
-    "client"
+    "typescript"
   ],
-  "homepage": "https://github.com/Thecodergabe/shipstack#readme",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/Thecodergabe/shipstack.git"
-  },
-  "bugs": {
-    "url": "https://github.com/Thecodergabe/shipstack/issues"
-  },
   "author": "Gabriel Rodriguez",
   "license": "ISC",
   "engines": {
     "node": ">=16.0.0"
   },
   "scripts": {
+    "/* --- Build and Lifecycle --- */": "",
     "prepare": "npm run build",
-    "prepublishOnly": "npm run test && npm run build",
-    "test": "vitest",
     "build": "tsup src/index.ts --format esm,cjs --dts",
-    "generate:usps:auth": "openapi --input https://developers.usps.com/sites/default/files/apidoc_specs/oauth2_3_update.yaml --output src/usps/auth/generated --client fetch",
-    "generate:usps:rates": "openapi --input https://developers.usps.com/sites/default/files/apidoc_specs/domestic-prices_10.yaml --output src/usps/rates/generated --client fetch",
-    "generate:usps:address": "openapi --input https://developers.usps.com/sites/default/files/apidoc_specs/addresses-v3r2_2.yaml --output src/usps/address/generated --client fetch",
-    "generate:usps:labels": "openapi --input https://developers.usps.com/sites/default/files/apidoc_specs/labels_update_1.yaml --output src/usps/labels/generated --client fetch",
-    "generate:usps:intl-prices": "openapi --input https://developers.usps.com/sites/default/files/apidoc_specs/international-prices_4.yaml --output src/usps/international/prices/generated --client fetch",
-    "generate:usps:intl-labels": "openapi --input https://developers.usps.com/sites/default/files/apidoc_specs/international-labels_8.yaml --output src/usps/international/labels/generated --client fetch",
-    "generate:usps:tracking": "openapi --input https://developers.usps.com/sites/default/files/apidoc_specs/tracking-v3r2_4.yaml --output src/usps/tracking/generated --client fetch",
-    "generate:usps:appointments": "openapi --input https://developers.usps.com/sites/default/files/apidoc_specs/appointments-all-mail-classes.yaml --output src/usps/appointments/generated --client fetch",
-    "generate:usps:carrier-pickup": "openapi --input https://developers.usps.com/sites/default/files/apidoc_specs/carrier-pickup_3.yaml --output src/usps/pickup/generated --client fetch",
-    "generate:usps:adjustments": "openapi --input https://developers.usps.com/sites/default/files/apidoc_specs/adjustments_0.yaml --output src/usps/adjustments/generated --client fetch",
-    "generate:usps:disputes": "openapi --input https://developers.usps.com/sites/default/files/apidoc_specs/disputes%20%282%29.yaml --output src/usps/disputes/generated --client fetch",
-    "generate:usps:service-standards": "openapi --input https://developers.usps.com/sites/default/files/apidoc_specs/service-standards_2_0.yaml --output src/usps/service-standards/generated --client fetch",
-    "generate:usps:shipping-options": "openapi --input https://developers.usps.com/sites/default/files/apidoc_specs/shipping-options_8.yaml --output src/usps/options/generated --client fetch",
-    "generate:usps:subscriptions": "openapi --input https://developers.usps.com/sites/default/files/apidoc_specs/subscriptions-tracking-v3r2_1.yaml --output src/usps/subscriptions/generated --client fetch",
+    "test": "vitest",
 
-    "generate:usps": "npm run generate:usps:auth && npm run generate:usps:rates && npm run generate:usps:address && npm run generate:usps:labels && npm run generate:usps:intl-prices && npm run generate:usps:intl-labels && npm run generate:usps:tracking && npm run generate:usps:appointments && npm run generate:usps:carrier-pickup && npm run generate:usps:adjustments && npm run generate:usps:disputes && npm run generate:usps:service-standards && npm run generate:usps:shipping-options && npm run generate:usps:subscriptions",
-    "generate:fedex:address": "openapi --input specs/fedex/address-validation.json --output src/fedex/address/generated --client fetch",
-    "generate:fedex:availability": "openapi --input specs/fedex/service-availability.json --output src/fedex/availability/generated --client fetch",
-    "generate:fedex:rates": "openapi --input specs/fedex/rate.json --output src/fedex/rates/generated --client fetch",
-    "generate:fedex:ship": "openapi --input specs/fedex/ship.json --output src/fedex/ship/generated --client fetch",
-    "generate:fedex": "npm run generate:fedex:address && npm run generate:fedex:availability && npm run generate:fedex:rates && npm run generate:fedex:ship",
-    "generate:all": "npm run generate:usps && npm run generate:fedex"
+    "/* --- Core USPS Generation (Domestic & International) --- */": "",
+    "generate:usps:auth": "openapi --input https://developers.usps.com/sites/default/files/apidoc_specs/oauth2_3_update.yaml --output src/usps/auth/generated --client fetch --name UspsAuthSdk",
+    "generate:usps:rates": "openapi --input https://developers.usps.com/sites/default/files/apidoc_specs/domestic-prices_10.yaml --output src/usps/rates/generated --client fetch --name UspsRatesSdk",
+    "generate:usps:address": "openapi --input https://developers.usps.com/sites/default/files/apidoc_specs/addresses-v3r2_2.yaml --output src/usps/address/generated --client fetch --name UspsAddressSdk",
+    "generate:usps:labels": "openapi --input https://developers.usps.com/sites/default/files/apidoc_specs/labels_update_1.yaml --output src/usps/labels/generated --client fetch --name UspsLabelsSdk",
+    "generate:usps:tracking": "openapi --input https://developers.usps.com/sites/default/files/apidoc_specs/tracking-v3r2_4.yaml --output src/usps/tracking/generated --client fetch --name UspsTrackingSdk",
+    "generate:usps:intl-rates": "openapi --input https://developers.usps.com/sites/default/files/apidoc_specs/international-prices_4.yaml --output src/usps/international/rates/generated --client fetch --name UspsIntlRatesSdk",
+    "generate:usps:intl-labels": "openapi --input https://developers.usps.com/sites/default/files/apidoc_specs/international-labels_8.yaml --output src/usps/international/labels/generated --client fetch --name UspsIntlLabelsSdk",
+    "generate:usps": "npm run generate:usps:auth && npm run generate:usps:rates && npm run generate:usps:address && npm run generate:usps:labels && npm run generate:usps:tracking && npm run generate:usps:intl-rates && npm run generate:usps:intl-labels",
+
+    "/* --- Core FedEx Generation --- */": "",
+    "generate:fedex:address": "openapi --input specs/fedex/address-validation.json --output src/fedex/address/generated --client fetch --name FedexAddressSdk",
+    "generate:fedex:rates": "openapi --input specs/fedex/rate.json --output src/fedex/rates/generated --client fetch --name FedexRatesSdk",
+    "generate:fedex:ship": "openapi --input specs/fedex/ship.json --output src/fedex/ship/generated --client fetch --name FedexShipSdk",
+    "generate:fedex:tracking": "openapi --input specs/fedex/track.json --output src/fedex/tracking/generated --client fetch --name FedexTrackingSdk",
+    "generate:fedex": "npm run generate:fedex:address && npm run generate:fedex:rates && npm run generate:fedex:ship && npm run generate:fedex:tracking",
+
+    "/* --- Core UPS Generation --- */": "",
+    "generate:ups:auth": "openapi --input specs/ups/OAuthClientCredentials-Ready.yaml --output src/ups/auth/generated --client fetch --name UpsAuthSdk",
+    "generate:ups:rates": "openapi --input specs/ups/Rating.yaml --output src/ups/rates/generated --client fetch --name UpsRatesSdk",
+    "generate:ups:ship": "openapi --input specs/ups/Shipping.yaml --output src/ups/ship/generated --client fetch --name UpsShipSdk",
+    "generate:ups:tracking": "openapi --input specs/ups/Tracking-Ready.yaml --output src/ups/tracking/generated --client fetch --name UpsTrackingSdk",
+    "generate:ups": "npm run generate:ups:auth && npm run generate:ups:rates && npm run generate:ups:ship && npm run generate:ups:tracking",
+
+    "/* --- Master Command --- */": "",
+    "generate:all": "npm run generate:usps && npm run generate:fedex && npm run generate:ups"
+  },
   "devDependencies": {
-    "@types/jest": "^30.0.0",
     "openapi-typescript-codegen": "^0.29.0",
     "tsup": "^8.5.0",
     "typescript": "^5.9.3",
-    "vitest": "^4.0.3"
+    "vitest": "^4.0.3",
+    "@types/node": "^20.0.0"
   },
   "dependencies": {
     "cross-fetch": "^4.1.0"

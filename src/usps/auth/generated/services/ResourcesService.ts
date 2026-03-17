@@ -9,9 +9,9 @@ import type { ProviderTokensResponse } from '../models/ProviderTokensResponse';
 import type { RefreshTokenCredentials } from '../models/RefreshTokenCredentials';
 import type { TokenRevokeRequest } from '../models/TokenRevokeRequest';
 import type { CancelablePromise } from '../core/CancelablePromise';
-import { OpenAPI } from '../core/OpenAPI';
-import { request as __request } from '../core/request';
+import type { BaseHttpRequest } from '../core/BaseHttpRequest';
 export class ResourcesService {
+    constructor(public readonly httpRequest: BaseHttpRequest) {}
     /**
      * Generate OAuth tokens.
      * Issue one or more OAuth tokens for a client application to use in making subsequent resource requests. Based on the _OAuth 2.0 Authorization Framework_, IETF Draft RFC 6749, October 2012, see [IETF 6749](https://datatracker.ietf.org/doc/html/rfc6749). **Access tokens are valid for eight hours after issuance, while refresh tokens are valid for seven days**.
@@ -24,10 +24,10 @@ export class ResourcesService {
      * @returns any Token Issued. Client application authorization has been granted and OAuth token(s) issued.
      * @throws ApiError
      */
-    public static postToken(
+    public postToken(
         formData?: (ClientCredentials | RefreshTokenCredentials | AuthorizationCodeCredentials),
     ): CancelablePromise<(ProviderAccessTokenResponse | ProviderTokensResponse)> {
-        return __request(OpenAPI, {
+        return this.httpRequest.request({
             method: 'POST',
             url: '/token',
             formData: formData,
@@ -49,10 +49,10 @@ export class ResourcesService {
      * @returns any Successful Operation. No response payload.
      * @throws ApiError
      */
-    public static postRevoke(
+    public postRevoke(
         formData?: TokenRevokeRequest,
     ): CancelablePromise<any> {
-        return __request(OpenAPI, {
+        return this.httpRequest.request({
             method: 'POST',
             url: '/revoke',
             formData: formData,

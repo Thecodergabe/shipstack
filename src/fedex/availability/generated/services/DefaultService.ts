@@ -9,9 +9,9 @@ import type { body_specialserviceoptions } from '../models/body_specialserviceop
 import type { CmdcResponseVO } from '../models/CmdcResponseVO';
 import type { TransitTimeOutputVO } from '../models/TransitTimeOutputVO';
 import type { CancelablePromise } from '../core/CancelablePromise';
-import { OpenAPI } from '../core/OpenAPI';
-import { request as __request } from '../core/request';
+import type { BaseHttpRequest } from '../core/BaseHttpRequest';
 export class DefaultService {
+    constructor(public readonly httpRequest: BaseHttpRequest) {}
     /**
      * Retrieve Services and Transit Times
      * This endpoint gives the estimated transit times for a particular shipment.<br><i>Note: FedEx APIs do not support Cross-Origin Resource Sharing (CORS) mechanism.</i>
@@ -23,14 +23,14 @@ export class DefaultService {
      * @returns TransitTimeOutputVO Success
      * @throws ApiError
      */
-    public static retrieveServicesAndTransitTimes(
+    public retrieveServicesAndTransitTimes(
         contentType: string,
         authorization: string,
         xCustomerTransactionId?: string,
         xLocale?: string,
         requestBody?: body,
     ): CancelablePromise<TransitTimeOutputVO> {
-        return __request(OpenAPI, {
+        return this.httpRequest.request({
             method: 'POST',
             url: '/availability/v1/transittimes',
             headers: {
@@ -61,14 +61,14 @@ export class DefaultService {
      * @returns CmdcResponseVO Success
      * @throws ApiError
      */
-    public static getPackageAndServiceOptions(
+    public getPackageAndServiceOptions(
         contentType: string,
         authorization: string,
         xCustomerTransactionId?: string,
         xLocale?: string,
         requestBody?: body_1,
     ): CancelablePromise<CmdcResponseVO> {
-        return __request(OpenAPI, {
+        return this.httpRequest.request({
             method: 'POST',
             url: '/availability/v1/packageandserviceoptions',
             headers: {
@@ -100,14 +100,14 @@ export class DefaultService {
      * @returns AvailabilitycxsResponseVO Success
      * @throws ApiError
      */
-    public static getSpecialServiceOptions(
+    public getSpecialServiceOptions(
         contentType: string,
         authorization: string,
         xCustomerTransactionId?: string,
         xLocale?: string,
         requestBody?: body_specialserviceoptions,
     ): CancelablePromise<AvailabilitycxsResponseVO> {
-        return __request(OpenAPI, {
+        return this.httpRequest.request({
             method: 'POST',
             url: '/availability/v1/specialserviceoptions',
             headers: {

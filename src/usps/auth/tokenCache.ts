@@ -3,11 +3,16 @@ let tokenExpiresAt: number | null = null;
 
 export function getCachedToken(): string | null {
   if (!cachedToken || !tokenExpiresAt) return null;
-  if (Date.now() > tokenExpiresAt) return null;
+  
+  // 60s buffer: consider it expired if it's within 1 minute of dying
+  if (Date.now() > (tokenExpiresAt - 60000)) {
+    return null;
+  }
+  
   return cachedToken;
 }
 
 export function setCachedToken(token: string, expiresIn: number) {
   cachedToken = token;
-  tokenExpiresAt = Date.now() + expiresIn * 1000;
+  tokenExpiresAt = Date.now() + (expiresIn * 1000);
 }

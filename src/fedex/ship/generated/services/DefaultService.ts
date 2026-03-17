@@ -15,9 +15,9 @@ import type { SHPCResponseVO_GetOpenShipmentResults } from '../models/SHPCRespon
 import type { SHPCResponseVO_ShipShipment } from '../models/SHPCResponseVO_ShipShipment';
 import type { SHPCResponseVO_Validate } from '../models/SHPCResponseVO_Validate';
 import type { CancelablePromise } from '../core/CancelablePromise';
-import { OpenAPI } from '../core/OpenAPI';
-import { request as __request } from '../core/request';
+import type { BaseHttpRequest } from '../core/BaseHttpRequest';
 export class DefaultService {
+    constructor(public readonly httpRequest: BaseHttpRequest) {}
     /**
      * Create Shipment
      * This endpoint helps you to create shipment requests thereby validating all the shipping input information and either generates the labels (if the responses is synchronous) or a job ID if transaction is processed using asynchronous method.<br><i>Note: FedEx APIs do not support Cross-Origin Resource Sharing (CORS) mechanism.</i>
@@ -29,14 +29,14 @@ export class DefaultService {
      * @returns SHPCResponseVO_ShipShipment Success
      * @throws ApiError
      */
-    public static createShipment(
+    public createShipment(
         contentType: string,
         authorization: string,
         xCustomerTransactionId?: string,
         xLocale?: string,
         requestBody?: Full_Schema_Ship,
     ): CancelablePromise<SHPCResponseVO_ShipShipment> {
-        return __request(OpenAPI, {
+        return this.httpRequest.request({
             method: 'POST',
             url: '/ship/v1/shipments',
             headers: {
@@ -68,14 +68,14 @@ export class DefaultService {
      * @returns SHPCResponseVO_CancelShipment Success
      * @throws ApiError
      */
-    public static cancelShipment(
+    public cancelShipment(
         contentType: string,
         authorization: string,
         xCustomerTransactionId?: string,
         xLocale?: string,
         requestBody?: Full_Schema_Cancel_Shipment,
     ): CancelablePromise<SHPCResponseVO_CancelShipment> {
-        return __request(OpenAPI, {
+        return this.httpRequest.request({
             method: 'PUT',
             url: '/ship/v1/shipments/cancel',
             headers: {
@@ -107,14 +107,14 @@ export class DefaultService {
      * @returns SHPCResponseVO_GetOpenShipmentResults Success
      * @throws ApiError
      */
-    public static getConfirmedShipmentAsyncResults(
+    public getConfirmedShipmentAsyncResults(
         contentType: string,
         authorization: string,
         xCustomerTransactionId?: string,
         xLocale?: string,
         requestBody?: FullSchema_getConfirmedShipmentAsyncResults,
     ): CancelablePromise<SHPCResponseVO_GetOpenShipmentResults> {
-        return __request(OpenAPI, {
+        return this.httpRequest.request({
             method: 'POST',
             url: '/ship/v1/shipments/results',
             headers: {
@@ -146,14 +146,14 @@ export class DefaultService {
      * @returns SHPCResponseVO_Validate Success
      * @throws ApiError
      */
-    public static shipmentPackageValidate(
+    public shipmentPackageValidate(
         contentType: string,
         authorization: string,
         xCustomerTransactionId?: string,
         xLocale?: string,
         requestBody?: FullSchema_VerifyShipment,
     ): CancelablePromise<SHPCResponseVO_Validate> {
-        return __request(OpenAPI, {
+        return this.httpRequest.request({
             method: 'POST',
             url: '/ship/v1/shipments/packages/validate',
             headers: {
@@ -184,14 +184,14 @@ export class DefaultService {
      * @returns SHPCResponseVO_CreateTag Success
      * @throws ApiError
      */
-    public static createTag(
+    public createTag(
         contentType: string,
         authorization: string,
         xCustomerTransactionId?: string,
         xLocale?: string,
         requestBody?: Full_Schema_Create_Tag,
     ): CancelablePromise<SHPCResponseVO_CreateTag> {
-        return __request(OpenAPI, {
+        return this.httpRequest.request({
             method: 'POST',
             url: '/ship/v1/shipments/tag',
             headers: {
@@ -224,7 +224,7 @@ export class DefaultService {
      * @returns SHPCResponseVO Success
      * @throws ApiError
      */
-    public static cancelTag(
+    public cancelTag(
         shipmentid: string,
         contentType: string,
         authorization: string,
@@ -232,7 +232,7 @@ export class DefaultService {
         xLocale?: string,
         requestBody?: FullSchema_CancelTag,
     ): CancelablePromise<SHPCResponseVO> {
-        return __request(OpenAPI, {
+        return this.httpRequest.request({
             method: 'PUT',
             url: '/ship/v1/shipments/tag/cancel/{shipmentid}',
             path: {

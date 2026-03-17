@@ -24,9 +24,9 @@ import type { PatchRequest } from '../models/PatchRequest';
 import type { ReturnLabelMultiPartResponse } from '../models/ReturnLabelMultiPartResponse';
 import type { ReturnLabelRequest } from '../models/ReturnLabelRequest';
 import type { CancelablePromise } from '../core/CancelablePromise';
-import { OpenAPI } from '../core/OpenAPI';
-import { request as __request } from '../core/request';
+import type { BaseHttpRequest } from '../core/BaseHttpRequest';
 export class ResourcesService {
+    constructor(public readonly httpRequest: BaseHttpRequest) {}
     /**
      * Create a domestic shipping label.
      * Generates a shipping label based upon the following:
@@ -74,11 +74,11 @@ export class ResourcesService {
      * @returns any Other unanticipated errors that may occur.
      * @throws ApiError
      */
-    public static postLabel(
+    public postLabel(
         xPaymentAuthorizationToken: string,
         requestBody: LabelRequest,
     ): CancelablePromise<LabelMultiPartResponse | any> {
-        return __request(OpenAPI, {
+        return this.httpRequest.request({
             method: 'POST',
             url: '/label',
             headers: {
@@ -148,11 +148,11 @@ export class ResourcesService {
      * @returns any Other unanticipated errors that may occur.
      * @throws ApiError
      */
-    public static postReturnLabel(
+    public postReturnLabel(
         xPaymentAuthorizationToken: string,
         requestBody: ReturnLabelRequest,
     ): CancelablePromise<ReturnLabelMultiPartResponse | any> {
-        return __request(OpenAPI, {
+        return this.httpRequest.request({
             method: 'POST',
             url: '/return-label',
             headers: {
@@ -189,11 +189,11 @@ export class ResourcesService {
      * @returns any Other unanticipated errors that may occur.
      * @throws ApiError
      */
-    public static deleteLabel(
+    public deleteLabel(
         trackingNumber: string,
         xPaymentAuthorizationToken: string,
     ): CancelablePromise<CancelResponse | any> {
-        return __request(OpenAPI, {
+        return this.httpRequest.request({
             method: 'DELETE',
             url: '/label/{trackingNumber}',
             path: {
@@ -229,12 +229,12 @@ export class ResourcesService {
      * @returns any Other unanticipated errors that may occur.
      * @throws ApiError
      */
-    public static patchEdit(
+    public patchEdit(
         trackingNumber: string,
         xPaymentAuthorizationToken: string,
         requestBody: PatchRequest,
     ): CancelablePromise<LabelMetadata | any> {
-        return __request(OpenAPI, {
+        return this.httpRequest.request({
             method: 'PATCH',
             url: '/label/{trackingNumber}',
             path: {
@@ -270,11 +270,11 @@ export class ResourcesService {
      * @returns IndiciaResponse Success
      * @throws ApiError
      */
-    public static postIndicia(
+    public postIndicia(
         xPaymentAuthorizationToken: string,
         requestBody: IndiciaRequest,
     ): CancelablePromise<any | IndiciaResponse> {
-        return __request(OpenAPI, {
+        return this.httpRequest.request({
             method: 'POST',
             url: '/indicia',
             headers: {
@@ -306,11 +306,11 @@ export class ResourcesService {
      * @returns IndiciaImbResponse Success
      * @throws ApiError
      */
-    public static postIndiciaImb(
+    public postIndiciaImb(
         xPaymentAuthorizationToken: string,
         requestBody: IndiciaImbRequest,
     ): CancelablePromise<any | IndiciaImbResponse> {
-        return __request(OpenAPI, {
+        return this.httpRequest.request({
             method: 'POST',
             url: '/indicia/imb',
             headers: {
@@ -345,11 +345,11 @@ export class ResourcesService {
      * @returns any Other unanticipated errors that may occur.
      * @throws ApiError
      */
-    public static deleteIndiciaImb(
+    public deleteIndiciaImb(
         imb: string,
         xPaymentAuthorizationToken: string,
     ): CancelablePromise<IMBCancelResponse | any> {
-        return __request(OpenAPI, {
+        return this.httpRequest.request({
             method: 'DELETE',
             url: '/indicia/imb/{imb}',
             path: {
@@ -391,11 +391,11 @@ export class ResourcesService {
      * @returns LabelBrandingUploadResponse Success
      * @throws ApiError
      */
-    public static postLabelBranding(
+    public postLabelBranding(
         xPaymentAuthorizationToken: string,
         requestBody: LabelBrandingUploadRequest,
     ): CancelablePromise<any | LabelBrandingUploadResponse> {
-        return __request(OpenAPI, {
+        return this.httpRequest.request({
             method: 'POST',
             url: '/branding',
             headers: {
@@ -426,14 +426,14 @@ export class ResourcesService {
      * @returns any Other unanticipated errors that may occur.
      * @throws ApiError
      */
-    public static getListLabelBranding(
+    public getListLabelBranding(
         xPaymentAuthorizationToken: string,
         limit: number = 10,
         offset?: number,
         orderBy: 'asc' | 'desc' = 'desc',
         sortBy: 'imageName' | 'createdDateTime' = 'createdDateTime',
     ): CancelablePromise<LabelBrandingGetListResponse | any> {
-        return __request(OpenAPI, {
+        return this.httpRequest.request({
             method: 'GET',
             url: '/branding',
             headers: {
@@ -466,11 +466,11 @@ export class ResourcesService {
      * @returns any Other unanticipated errors that may occur.
      * @throws ApiError
      */
-    public static getSingleLabelBranding(
+    public getSingleLabelBranding(
         imageUuid: string,
         xPaymentAuthorizationToken: string,
     ): CancelablePromise<LabelBrandingGetImageResponse | any> {
-        return __request(OpenAPI, {
+        return this.httpRequest.request({
             method: 'GET',
             url: '/branding/{imageUUID}',
             path: {
@@ -500,11 +500,11 @@ export class ResourcesService {
      * @returns any Other unanticipated errors that may occur.
      * @throws ApiError
      */
-    public static deleteLabelBranding(
+    public deleteLabelBranding(
         imageUuid: string,
         xPaymentAuthorizationToken: string,
     ): CancelablePromise<LabelBrandingDeleteResponse | any> {
-        return __request(OpenAPI, {
+        return this.httpRequest.request({
             method: 'DELETE',
             url: '/branding/{imageUUID}',
             path: {
@@ -535,12 +535,12 @@ export class ResourcesService {
      * @returns any Other unanticipated errors that may occur.
      * @throws ApiError
      */
-    public static patchLabelBranding(
+    public patchLabelBranding(
         imageUuid: string,
         xPaymentAuthorizationToken: string,
         requestBody: BrandingPatchRequest,
     ): CancelablePromise<LabelBrandingPatchResponse | any> {
-        return __request(OpenAPI, {
+        return this.httpRequest.request({
             method: 'PATCH',
             url: '/branding/{imageUUID}',
             path: {
@@ -576,12 +576,12 @@ export class ResourcesService {
      * @returns any Other unanticipated errors that may occur.
      * @throws ApiError
      */
-    public static postLabelReprint(
+    public postLabelReprint(
         trackingNumber: string,
         xPaymentAuthorizationToken: string,
         requestBody: LabelReprintRequest,
     ): CancelablePromise<LabelReprintMultiPartResponse | any> {
-        return __request(OpenAPI, {
+        return this.httpRequest.request({
             method: 'POST',
             url: '/label-reprint/{trackingNumber}',
             path: {
