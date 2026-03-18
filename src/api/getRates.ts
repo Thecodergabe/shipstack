@@ -1,47 +1,55 @@
-// api/getRates.ts
-import { RateRequest, NormalizedRate } from "../types/index";
+import { RateRequest } from "../types/index";
 
-import { createUpsRatesClient } from "../ups/index";
-import { createUspsRatesClient } from "../usps/index";
-import { createFedexRatesClient } from "../fedex/index";
-import { ShippingConfig } from "../config";
-
-// IMPORT YOUR BUILDERS
-import { buildUspsRateRequest } from "../usps/rates/request";
-import { buildFedexRateRequest } from "../fedex/rates/request";
-// import { buildUpsRateRequest } from "../ups/rates/request"; // Add when ready
-
-import { convertUpsRateResponse } from "../converters/rates/ups";
-import { convertUspsRateResponse } from "../converters/rates/usps";
-import { convertFedexRateResponse } from "../converters/rates/fedex";
-
-export async function getRates(req: RateRequest, config: ShippingConfig): Promise<NormalizedRate[]> {
-  switch (req.carrier) {
-    case "ups": {
-      const client = createUpsRatesClient();
-      // Add builder here once UPS is ready
-      const raw = await client.getRates(req as any); 
-      return convertUpsRateResponse(raw);
-    }
-
-    case "usps": {
-      // Pass the specific USPS config from our master config object
-      const client = createUspsRatesClient(config.usps); 
-      const uspsRequest = buildUspsRateRequest(req);
-      const raw = await client.getRates(uspsRequest);
-      return convertUspsRateResponse(raw);
-    }
-
-    case "fedex": {
-      const client = createFedexRatesClient();
-      // 1. TRANSFORM the request using the builder
-      const fedexRequest = buildFedexRateRequest(req);
-      // 2. PASS the transformed request
-      const raw = await client.getRates(fedexRequest);
-      return convertFedexRateResponse(raw);
-    }
-
-    default:
-      throw new Error(`Unsupported carrier: ${req.carrier}`);
-  }
+/**
+ * Transforms a generic Shipstack RateRequest into a FedEx v1 Rating payload.
+ * * * Data Mapping:
+ * 1. Account Number: Injected from config to enable negotiated/discounted rates.
+ * 2. Weight Conversion: Converts Ounces (Shipstack) to Pounds (FedEx) with 2-decimal precision.
+ * 3. Dimensions: Uses Math.ceil to comply with carrier billing rules for rounded inches.
+ * 4. Rate Types: Requests both 'ACCOUNT' (negotiated) and 'LIST' (retail) prices.
+ * * @param {RateRequest} req - The internal agnostic rate request.
+ * @param {string} accountNumber - The FedEx account number from the user's config.
+ * @returns {any} A formatted FedEx 'RateAndTransitTimesRequest' payload.
+ * @category Builders
+ */
+export function buildFedexRateRequest(req: RateRequest, accountNumber: string): any {
+  return {
+    /** * The account number is required at the root of the body for 
+     * FedEx v1 Rates to authorize negotiated pricing.
+     */
+    accountNumber: {
+      value: accountNumber,
+    },
+    requestedShipment: {
+      shipper: {
+        address: {
+          postalCode: req.originZip,
+          countryCode: "US", // Defaulting to US for domestic rating
+        },
+      },
+      recipient: {
+        address: {
+          postalCode: req.destZip,
+          countryCode: "US",
+        },
+      },
+      pickupType: "DROPOFF_AT_FEDEX_LOCATION",
+      /** Requesting both list and account-specific rates for comparison */
+      rateRequestType: ["ACCOUNT", "LIST"],
+      requestedPackageLineItems: [
+        {
+          weight: {
+            units: "LB",
+            value: Number((req.weightOz / 16).toFixed(2)),
+          },
+          dimensions: {
+            length: Math.ceil(req.lengthInches),
+            width: Math.ceil(req.widthInches),
+            height: Math.ceil(req.heightInches),
+            units: "IN",
+          },
+        },
+      ],
+    },
+  };
 }

@@ -1,71 +1,51 @@
 import type { AddressResponse } from "../../usps/address/generated/models/AddressResponse";
+import { AddressAdditionalInfo } from "../../usps/address/generated/models/AddressAdditionalInfo";
+import { NormalizedAddress } from "../../types/address";
 
 /**
- * Standardized Address format for the Shipstack library.
- * This interface is shared across all carrier converters to ensure
- * the end-user receives a consistent object structure.
+ * Transforms a raw USPS AddressResponse into a NormalizedAddress.
+ * * Extracts DPV (Delivery Point Validation) markers and business flags 
+ * to determine deliverability and location classification.
+ * * @param response - The raw payload from the USPS Address v3 API.
+ * @returns {NormalizedAddress} A cleansed, carrier-agnostic address object.
  */
-export interface NormalizedAddress {
-  street1: string;
-  street2?: string;
-  city: string;
-  state: string;
-  /** Format: 12345 or 12345-6789 */
-  postalCode: string;
-  country: string;
-  /** Delivery Point Validation: Confirms if the address is a deliverable location */
-  isValid: boolean;
-  /** Indicates if the address is a PO Box, affecting carrier service availability */
-  isPoBox: boolean;
-  /** Optional raw response for carrier-specific attributes like Residential/Commercial flags */
-  raw?: any;
-}
+export function normalizeUspsAddressResponse(response: any): NormalizedAddress {
+  const addr = response?.address;
+  const info = response?.additionalInfo as AddressAdditionalInfo;
 
-/**
- * Transforms USPS v3 AddressResponse into a NormalizedAddress.
- * Handles string normalization, ZIP+4 concatenation, and DPV validation logic.
- */
-export class UspsAddressConverter {
   /**
-   * Maps raw USPS SDK response to the Shipstack NormalizedAddress.
-   * * @param response - The raw object returned from the USPS address validation endpoint.
-   * @returns A clean, agnostic address object.
+   * DPV Logic per USPS v3 Docs:
+   * Y: Confirmed (Primary & Secondary)
+   * S: Primary confirmed, Secondary present but not confirmed
+   * D: Primary confirmed, Secondary missing
    */
-  static fromResponse(response: AddressResponse): NormalizedAddress {
-    const addr = response.address;
+  const validDpv = [
+    AddressAdditionalInfo.DPVConfirmation.Y,
+    AddressAdditionalInfo.DPVConfirmation.S,
+    AddressAdditionalInfo.DPVConfirmation.D,
+  ];
 
+  const isValid = info?.DPVConfirmation ? validDpv.includes(info.DPVConfirmation) : false;
+
+  return {
+    street1: addr?.streetAddress?.trim() || "",
+    street2: addr?.secondaryAddress?.trim() || undefined,
+    city: addr?.city?.trim() || "",
+    state: addr?.state?.trim() || "",
+    postalCode: addr?.ZIPPlus4 
+      ? `${addr.ZIPCode}-${addr.ZIPPlus4}` 
+      : addr?.ZIPCode || "",
+    country: "US",
+    isValid,
+    isPoBox: addr?.streetAddress?.toLowerCase().includes("po box") || 
+             response?.firm?.toLowerCase().includes("po box") || 
+             false,
     /**
-     * USPS v3 Validation Logic:
-     * 'isValid' should reflect Delivery Point Validation (DPV). 
-     * In the v3 API, an address is typically considered valid if the response 
-     * code is 'Y' or 'S'. If the API returns an error or a blank ZIP, it's invalid.
+     * Map USPS business flag to our internal classification.
      */
-    const dpvConfirmed = (response as any).dpvConfirmation === 'Y' || (response as any).dpvConfirmation === 'S';
-    const hasBaseZip = !!addr?.ZIPCode;
-
-    return {
-      street1: addr?.streetAddress?.trim() || "",
-      street2: addr?.secondaryAddress?.trim() || undefined,
-      city: addr?.city?.trim() || "",
-      state: addr?.state?.trim() || "",
-      postalCode: addr?.ZIPPlus4 
-        ? `${addr.ZIPCode}-${addr.ZIPPlus4}` 
-        : addr?.ZIPCode || "",
-      country: "US", // USPS v3 Domestic Address API is strictly US-based
-      
-      /** * isValid is true only if the address is confirmed as a delivery point 
-       * and contains at least a base ZIP code.
-       */
-      isValid: dpvConfirmed && hasBaseZip, 
-      
-      /** * Simple string check for PO Box. 
-       * Note: Some USPS responses include a 'poBoxFlag' which we prioritize if available.
-       */
-      isPoBox: (response as any).poBoxFlag === 'Y' || 
-               addr?.streetAddress?.toLowerCase().includes("po box") || 
-               false,
-      
-      raw: response
-    };
-  }
+    classification: info?.business === AddressAdditionalInfo.business.Y 
+      ? "COMMERCIAL" 
+      : "RESIDENTIAL",
+    raw: response
+  };
 }

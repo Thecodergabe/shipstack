@@ -1,12 +1,20 @@
-import { AddressValidationRequest, NormalizedAddress } from "../types/index";
+import { AddressValidationRequest, NormalizedAddress } from "../types/address";
 import { createUspsAddressClient } from "../usps/address/client";
-import { UspsAddressConverter } from "../converters/address/usps";
+import { normalizeUspsAddressResponse } from "../converters/address/usps";
+import { createFedexAddressClient } from "../fedex/address/client";
+import { normalizeFedexAddressResponse } from "../converters/address/fedex";
+import { getFedexConfig } from "../config";
 
 /**
- * Orchestrates address validation across multiple shipping carriers.
- * * This aggregator provides a single entry point for the library, allowing 
- * users to validate addresses without needing to know carrier-specific 
- * SDK implementations.
+ * Universal Address Validation Aggregator.
+ * 
+ * Orchestrates address validation requests across supported carriers. 
+ * This is the primary library entry point for verifying deliverability 
+ * and retrieving carrier-suggested address corrections.
+ * 
+ * @param request - The agnostic AddressValidationRequest containing the carrier and address.
+ * @returns {Promise<NormalizedAddress>} A standardized validation result.
+ * @throws {Error} If the specified carrier is unsupported or the API request fails.
  */
 export async function validateAddress(request: AddressValidationRequest): Promise<NormalizedAddress> {
   const { carrier, address } = request;
@@ -16,8 +24,7 @@ export async function validateAddress(request: AddressValidationRequest): Promis
       return handleUspsValidation(address);
 
     case "fedex":
-      // Future implementation: src/fedex/address/
-      throw new Error("FedEx address validation is not yet implemented.");
+      return handleFedexValidation(address);
 
     default:
       throw new Error(`Carrier '${carrier}' is not supported for address validation.`);
@@ -25,26 +32,50 @@ export async function validateAddress(request: AddressValidationRequest): Promis
 }
 
 /**
- * Internal logic for USPS validation. 
- * Extracts raw data from the SDK and passes it to the centralized converter.
+ * Handles USPS-specific validation logic.
+ * 
+ * @param address - The raw address object from the request.
+ * @returns {Promise<NormalizedAddress>}
+ * @private
  */
 async function handleUspsValidation(address: any): Promise<NormalizedAddress> {
-  /**
-   * Initialize the USPS client. Credentials must be provided via 
-   * global configuration before calling this.
-   */
   const client = createUspsAddressClient();
   await client.init();
-
-  /**
-   * The client.validateAddress call returns the raw 'AddressResponse' 
-   * generated from the OpenAPI spec.
-   */
+  
+  // The USPS Client returns a raw 'AddressResponse'
   const rawResponse = await client.validateAddress(address);
 
-  /**
-   * We pass the raw response to the converter to get our 
-   * standardized 'NormalizedAddress' format.
-   */
-  return UspsAddressConverter.fromResponse(rawResponse);
+  // Use the converter to transform 'AddressResponse' -> 'NormalizedAddress'
+  return normalizeUspsAddressResponse(rawResponse);
+}
+
+/**
+ * Handles FedEx-specific validation logic.
+ * 
+ * @param address - The raw address object from the request.
+ * @returns {Promise<NormalizedAddress>}
+ * @private
+ */
+async function handleFedexValidation(address: any): Promise<NormalizedAddress> {
+  const config = getFedexConfig();
+  const client = createFedexAddressClient(config);
+  await client.init();
+
+  // Mapping agnostic address to FedEx resolvedAddress format
+  const rawResponse = await client.validateAddress({
+    addressesToValidate: [
+      {
+        address: {
+          streetLines: address.streetLines,
+          city: address.city,
+          stateOrProvinceCode: address.stateOrProvinceCode,
+          postalCode: address.postalCode,
+          countryCode: address.countryCode,
+        },
+      },
+    ],
+  });
+
+  // Use the converter to transform 'AdvcResponseVO' -> 'NormalizedAddress'
+  return normalizeFedexAddressResponse(rawResponse);
 }

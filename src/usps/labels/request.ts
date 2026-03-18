@@ -3,17 +3,17 @@ import { LabelRequest } from "./generated/index";
 
 /**
  * Transforms a generic internal ShipmentRequest into a USPS-specific LabelRequest.
- * * This builder performs several critical mappings:
- * 1. Name Parsing: Splits full names into First/Last name components required by USPS.
- * 2. Unit Conversion: Converts total ounces into a Pounds/Ounces split for the package description.
- * 3. Standardization: Ensures image types and label sizes conform to USPS v3 uppercase requirements.
- * * @param req - The normalized internal shipment request.
- * @returns A LabelRequest object formatted for the USPS v3 Labels API.
+ * * This builder performs critical data transformations required by the USPS v3 API:
+ * 1. Name Parsing: Splits full names into First/Last name components.
+ * 2. Weight Conversion: Splits total ounces into a Pounds + Ounces structure.
+ * 3. Dimension Mapping: Maps agnostic package measurements to USPS fields.
+ * * @param req - The normalized internal shipment request from the aggregator.
+ * @returns {LabelRequest} A typed object ready for the USPS Labels v3 SDK.
  */
 export function buildUspsLabelRequest(req: ShipmentRequest): LabelRequest {
   return {
     /** * Label Image Configuration
-     * Defaulting to standard 4X6 thermal dimensions and PDF format.
+     * Standardizes on 4x6 thermal labels in PDF format for broad compatibility.
      */
     imageInfo: { 
       imageType: "PDF", 
@@ -21,7 +21,7 @@ export function buildUspsLabelRequest(req: ShipmentRequest): LabelRequest {
     },
 
     /** * Recipient Address Mapping
-     * USPS requires separated name fields. Fallback 'Resident' used if lastName is missing.
+     * Extracts the first word as firstName and the remainder as lastName.
      */
     toAddress: {
       firstName: req.toAddress.name.split(' ')[0],
@@ -34,7 +34,7 @@ export function buildUspsLabelRequest(req: ShipmentRequest): LabelRequest {
     },
 
     /** * Sender Address Mapping
-     * Fallback 'Sender' used if lastName is missing.
+     * Extracts name components and maps standardized street/city fields.
      */
     fromAddress: {
       firstName: req.fromAddress.name.split(' ')[0],
@@ -47,14 +47,14 @@ export function buildUspsLabelRequest(req: ShipmentRequest): LabelRequest {
     },
 
     /** * Package and Service Details
-     * Converts generic weight (oz) into the specific pounds + ounces format required by USPS.
+     * Converts generic weightOz into the Pounds/Ounces integer split required by USPS.
      */
     packageDescription: {
-      /** Total pounds (rounded down) */
+      /** Full pounds portion of the weight. */
       weight: Math.floor(req.package.weightOz / 16),
-      /** Remaining ounces (rounded to nearest whole number) */
+      /** Remaining ounces portion, rounded to the nearest integer. */
       ounces: Math.round(req.package.weightOz % 16), 
-      /** Casts internal service code to the specific USPS mail class identifier */
+      /** The mailClass identifies the specific USPS service (e.g., USPS_GROUND_ADVANTAGE). */
       mailClass: req.serviceCode as any,
       length: req.package.lengthInches,
       width: req.package.widthInches,

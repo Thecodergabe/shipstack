@@ -1,39 +1,59 @@
-// src/converters/rates/fedex.ts
 import { NormalizedRate } from "../../types/index";
+import type { RatcResponseVO } from "../../fedex/rates/generated/models/RatcResponseVO";
 
-export function convertFedexRateResponse(raw: any): NormalizedRate[] {
-  const details = raw?.output?.rateReplyDetails;
-  if (!Array.isArray(details)) return [];
+/**
+ * Normalizes the FedEx RatcResponseVO into the Shipstack NormalizedRate format.
+ * * Uses OperationalDetail.deliveryDate -> estimatedArrival
+ * * Uses OperationalDetail.transitTime -> deliveryDays (via helper)
+ */
+export function convertFedexRateResponse(response: RatcResponseVO): NormalizedRate[] {
+  const output: NormalizedRate[] = [];
+  const rateQuotes = response?.output?.rateReplyDetails || [];
 
-  return details.map((detail: any) => {
-    const rated = detail?.ratedShipmentDetails?.[0];
+  for (const quote of rateQuotes) {
+    const shipmentDetails = quote.ratedShipmentDetails?.[0];
+    const rateDetail = shipmentDetails?.shipmentRateDetail;
+    const opDetail = quote.operationalDetail;
 
-    const amount =
-      rated?.totalNetCharge?.amount ??
-      rated?.totalBaseCharge?.amount ??
-      0;
+    // Casting to any to access totalNetCharge which exists in the JSON 
+    // but might be missing from your ShipmentRateDetail interface snippet.
+    const amount = (shipmentDetails as any)?.totalNetCharge ?? 0;
 
-    const currency =
-      rated?.totalNetCharge?.currency ??
-      rated?.totalBaseCharge?.currency ??
-      "USD";
-
-    // Delivery estimate can come from commit or transitTime
-    const deliveryDays =
-      detail?.commit?.commitDays ??
-      detail?.transitTime ??
-      undefined;
-
-    return {
+    output.push({
       carrier: "fedex",
-      serviceCode: detail?.serviceType ?? "",
-      serviceName: detail?.serviceName ?? "",
-      deliveryDays: typeof deliveryDays === "number" ? deliveryDays : undefined,
+      serviceName: quote.serviceType?.replace(/_/g, " ") || "FedEx Service",
+      serviceCode: quote.serviceType || "UNKNOWN",
       cost: {
-        amount: Number(amount),
-        currency
+        amount: typeof amount === 'number' ? amount : parseFloat(amount || "0"),
+        currency: rateDetail?.currency || "USD"
       },
-      raw: detail
-    };
-  });
+      // Matches NormalizedRate.estimatedArrival
+      estimatedArrival: opDetail?.deliveryDate || undefined,
+      // Matches NormalizedRate.deliveryDays (FedEx returns "THREE_DAYS", we need a number)
+      deliveryDays: opDetail?.transitTime ? parseFedexTransitTime(opDetail.transitTime) : undefined,
+      raw: quote
+    });
+  }
+
+  return output;
+}
+
+/**
+ * Helper to convert FedEx string-based transit times into numbers.
+ * FedEx returns values like "ONE_DAY", "TWO_DAYS", etc.
+ */
+function parseFedexTransitTime(timeStr: string): number | undefined {
+  const map: Record<string, number> = {
+    'ONE_DAY': 1,
+    'TWO_DAYS': 2,
+    'THREE_DAYS': 3,
+    'FOUR_DAYS': 4,
+    'FIVE_DAYS': 5,
+    'SIX_DAYS': 6,
+    'SEVEN_DAYS': 7,
+    'EIGHT_DAYS': 8,
+    'NINE_DAYS': 9,
+    'TEN_DAYS': 10
+  };
+  return map[timeStr.toUpperCase()] || undefined;
 }

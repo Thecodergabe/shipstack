@@ -1,37 +1,41 @@
 import { OpenAPI, ResourcesService } from "./generated/index";
 import { configureUspsClient } from "../clientFactory";
 import { buildUspsAddressParams } from "./request";
-import { getLogger } from "../../logger";
-// Import the converter from our new standardized folder
-import { UspsAddressConverter } from "../../converters/address/usps";
-import type { NormalizedAddress } from "../../converters/address/usps";
+import { normalizeUspsAddressResponse } from "../../converters/address/usps";
+import { NormalizedAddress } from "../../types/address";
 
 /**
- * Client for interacting with the USPS Addresses v3 API.
+ * Service Client for interacting with the USPS Addresses v3 API.
+ * * Provides standardized access to USPS address validation and normalization services.
+ * This client ensures all carrier-specific configurations are applied via the 
+ * Shipstack initialization flow.
  */
 export class UspsAddressClient {
-  private logger = getLogger();
-
   /**
-   * Initializes the USPS Addresses client.
+   * Initializes the USPS client context.
+   * Maps credentials and base URL to the OpenAPI singleton.
    */
-  async init() {
+  async init(): Promise<void> {
     await configureUspsClient(OpenAPI, "address");
   }
 
   /**
-   * Validates a physical address against the USPS database.
-   * @returns A NormalizedAddress standardized for the Shipstack library.
+   * Validates a physical address and returns a normalized Shipstack result.
+   * * @param params - Parameters generated via buildUspsAddressParams.
+   * @returns {Promise<NormalizedAddress>} Standardized address object.
    */
   async validateAddress(
     params: ReturnType<typeof buildUspsAddressParams>
   ): Promise<NormalizedAddress> {
-    this.logger.debug("[USPS] Executing address validation request...");
-    
     await this.init();
     
     const service = new ResourcesService(OpenAPI as any);
     
+    /**
+     * The cast to 'any' is intentional. It bridges the gap between the 
+     * generated SDK models and our internal library interfaces to bypass 
+     * the "no properties in common" structural check.
+     */
     const rawResponse = await service.getAddress(
       params.streetAddress,
       params.state,
@@ -41,11 +45,13 @@ export class UspsAddressClient {
       params.urbanization,
       params.zipCode,
       params.zipPlus4
-    );
+    ) as any;
 
-    // Pass the raw SDK response through our agnostic converter
-    return UspsAddressConverter.fromResponse(rawResponse);
+    return normalizeUspsAddressResponse(rawResponse);
   }
 }
 
-export const createUspsAddressClient = () => new UspsAddressClient();
+/**
+ * Factory function for creating a UspsAddressClient instance.
+ */
+export const createUspsAddressClient = (): UspsAddressClient => new UspsAddressClient();
