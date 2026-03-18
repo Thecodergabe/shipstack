@@ -2,7 +2,7 @@ import type { TotalRatesQuery } from "./generated/models/TotalRatesQuery";
 import { ExtraService } from "./generated/models/ExtraService";
 import { priceType } from "./generated/models/priceType";
 import { mailClassOutboundOnly } from "./generated/models/mailClassOutboundOnly";
-import { RateRequest as InternalRateRequest } from "../../types/index";
+import { RateRequest as InternalRateRequest } from "@/types/index";
 
 /**
  * Transforms a generic internal RateRequest into a USPS-specific TotalRatesQuery.

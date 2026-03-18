@@ -1,4 +1,4 @@
-import { NormalizedAddress, AddressClassification } from "../../types/address";
+import { NormalizedAddress, AddressClassification } from "@/types/address";
 
 /**
  * Normalizes a raw FedEx Address Resolution response into a Shipstack NormalizedAddress.

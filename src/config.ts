@@ -29,6 +29,10 @@ export interface UpsConfig {
   enabled: boolean;
   clientId: string;
   clientSecret: string;
+  /** 
+   * The 6-character UPS Account Number. 
+   * Maps to 'ShipperNumber' in the UPS Shipping API.
+   */
   accountNumber: string;
   baseUrl?: string;
 }
@@ -58,7 +62,6 @@ export function setShipstackConfig(config: ShippingConfig) {
 
 /**
  * Aggregator: Retrieves a list of carrier keys that are explicitly enabled.
- * * This replaces the old 'process.env' logic, utilizing the library's internal state.
  * @returns Array of strings: ["usps", "fedex", "ups"]
  */
 export function getEnabledCarriers(): string[] {

@@ -1,4 +1,4 @@
-import { RateRequest } from "../../types/index";
+import { RateRequest } from "@/types/index";
 
 /**
  * Transforms an agnostic Shipstack RateRequest into a FedEx-specific rating payload.

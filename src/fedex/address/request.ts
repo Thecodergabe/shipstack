@@ -1,4 +1,4 @@
-import { AddressValidationRequest } from "../../types/index";
+import { AddressValidationRequest } from "@/types/index";
 
 /**
  * FedEx Address Validation Request Builder

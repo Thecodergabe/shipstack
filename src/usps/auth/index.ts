@@ -1,8 +1,8 @@
 import { requestUspsToken } from "./token";
-import { getLogger } from "../../logger";
+import { getLogger } from "@/logger";
 import { getCachedToken, setCachedToken } from "./tokenCache";
-import { getUspsConfig } from "../../config";
-import { ShipstackError } from "../../errors";
+import { getUspsConfig } from "@/config";
+import { ShipstackError } from "@/errors";
 
 export async function getUspsAccessToken(): Promise<string> {
   const cached = getCachedToken();

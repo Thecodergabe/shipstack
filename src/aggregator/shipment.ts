@@ -1,50 +1,48 @@
-import { ShipmentRequest, NormalizedShipment } from "../types/index";
+import { ShipmentRequest, NormalizedShipment } from "@/types/index";
 
 /**
  * USPS Service Layer
- * Includes the v3 Label Client, Request Builder, and Response Converter.
  */
 import { createUspsLabelClient } from "../usps/labels/client";
 import { buildUspsLabelRequest } from "../usps/labels/request"; 
-import { convertUspsShipmentResponse } from "../converters/shipment/usps";
+import { convertUspsShipmentResponse } from "@/converters/shipment/usps";
 
 /**
  * FedEx Service Layer
- * Includes the v1 Ship Client, Request Builder, and Response Converter.
  */
-import { createFedexShipClient } from "../fedex/ship/client";
-import { buildFedexShipRequest } from "../fedex/ship/request"; 
-import { normalizeFedexShipResponse } from "../converters/shipment/fedex"; 
+import { createFedexShipClient } from "@/fedex/ship/client";
+import { buildFedexShipRequest } from "@/fedex/ship/request"; 
+import { normalizeFedexShipResponse } from "@/converters/shipment/fedex"; 
+
+/**
+ * UPS Service Layer
+ * * Includes the v2409 Shipping Client, Request Builder, and Response Converter.
+ */
+import { createUpsShipClient } from "@/ups/shipping/client";
+import { buildUpsShipRequest } from "@/ups/shipping/request";
+import { normalizeUpsShipResponse } from "@/converters/shipment/ups";
 
 /**
  * Configuration Layer
- * Environment-agnostic getters for carrier-specific credential slices.
  */
-import { getUspsConfig, getFedexConfig, getEnabledCarriers } from "../config";
+import { 
+  getUspsConfig, 
+  getFedexConfig, 
+  getUpsConfig, 
+  getEnabledCarriers 
+} from "../config";
 
 /**
  * Orchestrates the creation of shipping labels across all supported carriers.
  * * This aggregator acts as a unified facade, abstracting the underlying 
- * complexities of different carrier APIs (USPS v3, FedEx v1). It handles 
- * authentication initialization, request transformation, and response 
- * normalization into a consistent Shipstack format.
- * * @param {ShipmentRequest} request - The agnostic shipment payload containing 
- * addresses, parcel dimensions, and the selected carrier/service.
- * * @returns {Promise<NormalizedShipment>} A standardized shipment object 
- * containing the tracking number, label image, and final charges.
- * * @throws {Error} If the carrier is disabled, unsupported, or if the 
- * upstream carrier API returns a terminal error.
- * * @category Aggregators
- * @public
+ * complexities of different carrier APIs (USPS v3, FedEx v1, UPS v2409).
+ * * @param {ShipmentRequest} request - The agnostic shipment payload.
+ * @returns {Promise<NormalizedShipment>} A standardized shipment object.
  */
 export async function createShipment(request: ShipmentRequest): Promise<NormalizedShipment> {
   const carrier = request.carrier.toLowerCase();
   const enabledCarriers = getEnabledCarriers();
 
-  /**
-   * Guard: Ensure the carrier is explicitly enabled in the library config
-   * to prevent unauthorized or misconfigured API attempts.
-   */
   if (!enabledCarriers.includes(carrier)) {
     throw new Error(`Shipstack Configuration Error: Carrier '${carrier}' is not enabled.`);
   }
@@ -56,6 +54,9 @@ export async function createShipment(request: ShipmentRequest): Promise<Normaliz
     case "fedex":
       return handleFedexShipment(request);
 
+    case "ups":
+      return handleUpsShipment(request);
+
     default:
       throw new Error(`Shipstack Support Error: Carrier '${carrier}' is not yet supported for shipments.`);
   }
@@ -63,46 +64,55 @@ export async function createShipment(request: ShipmentRequest): Promise<Normaliz
 
 /**
  * Internal handler for USPS Label v3 generation.
- * * Orchestrates the USPS-specific workflow including OAuth2 token 
- * negotiation via the client.init() method.
- * * @private
+ * @private
  */
 async function handleUspsShipment(request: ShipmentRequest): Promise<NormalizedShipment> {
   const config = getUspsConfig();
   const client = createUspsLabelClient(config);
-  
-  // Negotiate OAuth2 Token and set Base URL
   await client.init();
-
-  // Map agnostic request to USPS v3 Schema
   const uspsRequest = buildUspsLabelRequest(request);
-
-  // Execute Label Generation
   const rawResponse = await client.createLabel(uspsRequest);
-  
-  // Standardize the response
   return convertUspsShipmentResponse(rawResponse);
 }
 
 /**
  * Internal handler for FedEx Ship v1 generation.
- * * Orchestrates the FedEx-specific workflow, ensuring the instance-specific 
- * SDK is authorized before the shipment payload is submitted.
- * * @private
+ * @private
  */
 async function handleFedexShipment(request: ShipmentRequest): Promise<NormalizedShipment> {
   const config = getFedexConfig();
   const client = createFedexShipClient(config);
-  
-  // Authenticate and configure the internal FedexShipSdk
   await client.init();
-
-  // Map agnostic request to FedEx v1 'Full_Schema_Shipment'
   const fedexRequest = buildFedexShipRequest(request);
-
-  // Execute Shipment Creation and Label Retrieval
   const rawResponse = await client.createLabel(fedexRequest);
-
-  // Flatten the response and map the service code to a human-readable name
   return normalizeFedexShipResponse(rawResponse, request.serviceCode);
+}
+
+/**
+ * Internal handler for UPS Shipping v2409 generation.
+ * * Utilizes the internal OAuth2 manager for token lifecycle handling
+ * and maps the agnostic request to the UPS SHIPRequestWrapper.
+ * @private
+ */
+async function handleUpsShipment(request: ShipmentRequest): Promise<NormalizedShipment> {
+  const config = getUpsConfig();
+  const client = createUpsShipClient(config);
+
+  /**
+   * UPS Request Transformation
+   * * Uses 'accountNumber' from the UpsConfig interface to satisfy
+   * the UPS ShipperNumber requirement.
+   */
+  const upsRequest = buildUpsShipRequest(request, config.accountNumber);
+
+  /**
+   * Execute Shipment Creation
+   * * The client automatically manages OAuth2 token retrieval and injection.
+   */
+  const rawResponse = await client.createShipment(upsRequest);
+
+  /**
+   * Standardize the UPS response into the Shipstack NormalizedShipment format.
+   */
+  return normalizeUpsShipResponse(rawResponse);
 }

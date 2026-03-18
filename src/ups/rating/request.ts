@@ -1,11 +1,28 @@
-import { RATERequestWrapper } from "./generated/models/RATERequestWrapper";
-import { RateRequest as InternalRateRequest } from "../../types/index";
+/**
+ * UPS Rating Request Builder
+ * * This module transforms agnostic Shipstack rating requests into the 
+ * specific nested JSON structure required by the UPS Rating API.
+ */
 
-export function buildUpsRateRequest(req: InternalRateRequest): RATERequestWrapper {
+import { RATERequestWrapper } from "./generated/index";
+import { RateRequest as InternalRateRequest } from "@/types/index";
+
+/**
+ * Transforms an agnostic Shipstack rate request into a UPS RATERequestWrapper.
+ * * @param {InternalRateRequest} req - The standardized rating request.
+ * @param {string} shipperNumber - The 6-digit UPS account number (required for negotiated rates).
+ * @returns {RATERequestWrapper} The formatted UPS rating payload.
+ * @category Builders
+ * @public
+ */
+export function buildUpsRateRequest(
+  req: InternalRateRequest,
+  shipperNumber: string
+): RATERequestWrapper {
   return {
     RateRequest: {
       Request: {
-        SubVersion: "2409", // Using the latest subversion from your types
+        SubVersion: "2409", 
         TransactionReference: {
           CustomerContext: "shipstack-rating"
         }
@@ -21,7 +38,7 @@ export function buildUpsRateRequest(req: InternalRateRequest): RATERequestWrappe
       Shipment: {
         Shipper: {
           Name: "Main Shipper",
-          ShipperNumber: process.env.UPS_SHIPPER_NUMBER || "", // UPS usually requires this for account rates
+          ShipperNumber: shipperNumber,
           Address: {
             AddressLine: [""], 
             PostalCode: req.originZip,
@@ -36,7 +53,10 @@ export function buildUpsRateRequest(req: InternalRateRequest): RATERequestWrappe
             CountryCode: "US"
           }
         },
-        // Package is an array in UPS
+        /**
+         * UPS handles multiple packages; we map the single Shipstack package 
+         * to a single-element array.
+         */
         Package: [
           {
             PackagingType: {
@@ -57,13 +77,17 @@ export function buildUpsRateRequest(req: InternalRateRequest): RATERequestWrappe
                 Code: "LBS",
                 Description: "Pounds"
               },
-              // Convert Ounces to Pounds for UPS
+              // Convert ounces to pounds as UPS Rating expects LBS for US origins.
               Weight: (req.weightOz / 16).toFixed(2)
             }
           }
         ],
         ShipmentRatingOptions: {
-          NegotiatedRatesIndicator: "" // Empty string tag enables account-based rates
+          /**
+           * Presence of this indicator tells UPS to return both 
+           * Published and Negotiated (account-based) rates.
+           */
+          NegotiatedRatesIndicator: "" 
         }
       }
     }

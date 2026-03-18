@@ -1,5 +1,5 @@
-import { NormalizedRate } from "../../types/index";
-import type { TotalRatesQueryResult } from "../../usps/rates/generated/models/TotalRatesQueryResult";
+import { NormalizedRate } from "@/types/index";
+import type { TotalRatesQueryResult } from "@/usps/rates/generated/models/TotalRatesQueryResult";
 
 /**
  * Standardizes a USPS v3 Domestic Prices response into a Shipstack NormalizedRate array.

@@ -1,4 +1,4 @@
-import { AddressValidationRequest } from "../../types/index";
+import { AddressValidationRequest } from "@/types/index";
 
 /**
  * Transforms a normalized Shipstack address into the specific schema 

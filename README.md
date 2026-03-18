@@ -1,25 +1,17 @@
 # Shipstack
 
-[![npm version](https://badge.fury.io/js/shipstack.svg)](https://badge.fury.io/js/shipstack)
-[![License: ISC](https://img.shields.io/badge/License-ISC-blue.svg)](LICENSE)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue)](https://www.typescriptlang.org/)
+Shipstack is a high-performance, type-safe shipping SDK designed to orchestrate logistics across multiple carriers. By combining auto-generated OpenAPI clients with a unified orchestration layer, Shipstack allows developers to compare rates, validate addresses, and track shipments using a single, framework-agnostic interface.
 
-> Typed, modular shipping API wrapper supporting USPS and FedEx with auto-generated clients from official OpenAPI specs
+## Core Capabilities
 
-Shipstack provides a clean, type-safe interface to USPS and FedEx APIs. It's built with:
-- **OpenAPI-generated clients** for guaranteed API compliance
-- **Built-in logging & error handling** with structured error messages
-- **Runtime configuration** for flexible deployment
-- **Multi-platform support** - Node.js, Cloudflare Workers, Azure Functions, and more
+* **Unified Orchestration**: A single `ShippingClient` to manage USPS, FedEx, and UPS operations.
+* **Agnostic Data Models**: Standardized types for Rates, Tracking, and Addresses across all carriers.
+* **Smart Ranking**: Built-in logic to identify "Cheapest" and "Fastest" options from a multi-carrier pool.
+* **Batch Tracking**: Intelligent tracking aggregator that handles carrier-specific batch limits and concurrency.
+* **Compliance First**: Low-level clients are generated directly from official carrier OpenAPI specifications.
+* **Runtime Agnostic**: Fully compatible with Node.js, Cloudflare Workers, Bun, and Deno.
 
-## Features
-
-- 📦 USPS and FedEx API clients
-- 🔒 Full TypeScript support with type definitions
-- 🌍 Cross-platform runtime (Node.js, edge functions, etc.)
-- ⚙️ Runtime configuration without rebuilding
-- 📝 Comprehensive logging and error handling
-- 🔄 Auto-generated from official OpenAPI specs
+---
 
 ## Installation
 
@@ -27,176 +19,87 @@ Shipstack provides a clean, type-safe interface to USPS and FedEx APIs. It's bui
 npm install shipstack
 ```
 
-## Quick Start
+## QUICK START
 
-### Configuration
-
-```javascript
-import { setConfig, setLogger, setLogLevel } from "shipstack";
-
-setConfig({
-  USPS_API_KEY: "your-usps-api-key",
-  USPS_BASE_URL: "https://sandbox.api.usps.com" // optional
-});
-
-setLogger(console); // optional
-setLogLevel("info"); // optional - one of: debug, info, warn, error
-```
-
-### USPS Example
-
-```javascript
-import { createUspsClient } from "shipstack";
-
-const usps = createUspsClient();
-
-// Get OAuth token
-const token = await usps.oauth2Token({ 
-  grant_type: "client_credentials" 
-});
-
-// Get rates
-const rates = await usps.rates({
-  // ... rate parameters
-});
-```
-
-### FedEx Example
-
-```javascript
-import {
-  createFedexAddressClient,
-  createFedexRateClient,
-When the API specs change, regenerate the clients:
-
-```bash
-npm run generate:usps      # Regenerate USPS client
-npm run generate:fedex     # Regenerate FedEx clients
-npm run generate:all       # Regenerate all clients
-```
-
-See [CONTRIBUTING.md](./CONTRIBUTING.md) for detailed information on extending the library.
-
-## Testing
-
-```bash
-npm test                   # Run all tests
-npm test -- --watch       # Watch mode
-```
-
-## Building
-
-```bash
-npm run build             # Build ESM and CommonJS
-```
-
-Output is in the `dist/` directory with TypeScript definitions included.
-
-## License
-
-[ISC License](LICENSE) - See LICENSE file for details.
-
-## Support
-
-- 📖 [GitHub Issues](https://github.com/yourusername/shipstack/issues)
-- 📝 [Contributing](./CONTRIBUTING.md)
-- 📋 [Changelog](./CHANGELOG.md)
-
-## Related Links
-- [OpenAPI Specification](https://learn.openapis.org/)
-- [USPS Developer Documentation](https://developers.usps.com/)
-- [FedEx Developer Portal](https://developer.fedex.com/)
-} from "shipstack";
-
-const fedexAddress = createFedexAddressClient();
-const fedexRates = createFedexRateClient();
-const fedexShip = createFedexShipClient();
-const fedexAvailability = createFedexAvailabilityClient();
-
-// Validate address
-const validation = await fedexAddress.addressValidation({
-  // ... address parameters
-});
-
-// Get rates
-const rates = await fedexRates.rateRequest({
-  // ... rate parameters
-});
-```
-
-## API Documentation
-
-### USPS
-- [Authentication](https://developers.usps.com/getting-started)
-- [Domestic Pricing](https://developers.usps.com/apis/shipping/domestic-prices)
-- [Address Validation](https://developers.usps.com/apis/addresses)
-- [Tracking](https://developers.usps.com/apis/tracking)
-- [Labels](https://developers.usps.com/apis/labels)
-- [International Pricing](https://developers.usps.com/apis/shipping/international-prices)
-
-### FedEx
-- [Developer Resources](https://developer.fedex.com/)
-- [Address Validation](https://developer.fedex.com/api/en-us/catalog/address-validation.html)
-- [Rate Shopping](https://developer.fedex.com/api/en-us/catalog/rate.html)
-- [Ship](https://developer.fedex.com/api/en-us/catalog/ship.html)
-- [Service Availability](https://developer.fedex.com/api/en-us/catalog/service-availability.html)
-
-## Configuration
-
-Configuration via `setConfig()` supports:
+The recommended approach is to use the stateful ShippingClient, which stores configuration once and exposes high‑level workflow methods.
+- Initialization (TypeScript) 
 
 ```typescript
-interface ShipstackConfig {
-  USPS_API_KEY?: string;
-  USPS_BASE_URL?: string;
-  FEDEX_API_KEY?: string;
-  FEDEX_SECRET_KEY?: string;
-  FEDEX_ACCOUNT_ID?: string;
-  FEDEX_METER_NUMBER?: string;
-}
+import { ShippingClient } from "shipstack";
+const shipstack = new ShippingClient({ usps: 
+  { apiKey: "YOUR_USPS_KEY", apiSecret: "YOUR_USPS_SECRET", baseUrl: "https://sandbox.api.usps.com" }, 
+  fedex: { apiKey: "YOUR_FEDEX_KEY", secretKey: "YOUR_FEDEX_SECRET" }, ups: { apiKey: "YOUR_UPS_KEY", apiSecret: "YOUR_UPS_SECRET" } });
+```
+- Multi‑Carrier Rating (TypeScript)
+
+```typescript
+const rates = await shipstack.getRankedRates( { 
+    originZip: "90210", 
+    destZip: "10001", 
+    weightOz: 16, 
+    lengthInches: 10, 
+    widthInches: 5, 
+    heightInches: 5 }, 
+    ["usps", "fedex", "ups"] );
+const cheapest = rates.find(r => r.isCheapest); const fastest = rates.find(r => r.isFastest);
+console.log("Cheapest: " + cheapest.serviceName + " at $" + cheapest.cost.amount);
 ```
 
-## Error Handling
+- Unified Tracking (TypeScript)
 
-```javascript
+```typescript
+const tracking = await shipstack.track(["9400100000000000000000", "9400100000000000000001"], "usps" );
+tracking.forEach(pkg => { console.log("Status of " + pkg.trackingNumber + ": " + pkg.status.description); });
+```
+
+## ADVANCED USAGE
+
+Functional API (TypeScript)
+
+```typescript
+import { getRates, validateAddress, trackShipment } from "shipstack";
+const rates = await getRates(request, config);
+```
+
+Direct Carrier Access (TypeScript)
+
+```typescript
+import { createUspsRatesClient } from "shipstack";
+const usps = createUspsRatesClient(config.usps); const rawResponse = await usps.getRates({ ... });
+```
+
+## ERROR HANDLING
+
+Shipstack wraps carrier‑level failures into a standardized ShipstackError.
+
+```typescript
 import { ShipstackError } from "shipstack";
-
-try {
-  const rates = await usps.rates({...});
-} catch (error) {
-  if (error instanceof ShipstackError) {
-    console.error(error.message); // Formatted error
-    console.error(error.originalError); // Original API error
-  }
+try { 
+  await shipstack.getRates(req); 
+} catch (error) { 
+  if (error instanceof ShipstackError) { 
+    console.error(error.message); 
+    console.error(error carrier);  // usps | fedex | ups 
+  } 
 }
 ```
 
-## Logging
+## DEVELOPMENT AND CONTRIBUTION
 
-Control logging output:
+## Regenerating Clients
 
-```javascript
-setLogLevel("debug"); // Detailed logs
-setLogLevel("info");  // General info
-setLogLevel("warn");  // Warnings only
-setLogLevel("error"); // Errors only
-```
+**npm run generate:usps**    (sync USPS v3 specs)
+**npm run generate:fedex**  (sync local FedEx specs)
+**npm run generate:ups**     (sync local UPS specs)
+**npm run generate:all**     (sync all carriers)
 
-## Development
+## DOCUMENTATION LINKS
 
-### Prerequisites
-- Node.js 16+
-- npm 7+
+Changelog
+Contributing Guide
+USPS Developer Portal
+FedEx Developer Portal
+UPS Developer Portal
 
-### Setup
-
-```bash
-npm install
-npm run build
-npm test
-```
-
-### Regenerating Clients
-
-## Contributing
-See [CONTRIBUTING.md](./CONTRIBUTING.md) for regenerating clients and extending the library.
+## LICENSE
+ISC License

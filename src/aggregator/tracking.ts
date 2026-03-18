@@ -1,40 +1,67 @@
-import { NormalizedTracking } from "../types/index";
-
 /**
- * USPS Tracking Layer
+ * Shipstack Tracking Aggregator
+ * * Standardized batch tracking for USPS, FedEx, and UPS.
+ * * This service abstracts away carrier-specific batch limits and response formats,
+ * handling concurrency and chunking logic for high-volume inquiries.
+ * * @module Aggregator/Tracking
  */
-import { UspsTrackingClient } from "../usps/tracking/client";
-import { convertUspsTrackingResponse } from "../converters/tracking/usps";
+
+import { NormalizedTracking } from "@/types/index";
+import { ShippingConfig, getUspsConfig, getFedexConfig, getUpsConfig } from "@/config";
+
+/** --- USPS Internal --- */
+import { UspsTrackingClient } from "@/usps/tracking/client";
+import { convertUspsTrackingResponse } from "@/converters/tracking/usps";
+
+/** --- FedEx Internal --- */
+import { createFedexTrackingClient } from "@/fedex/tracking/client";
+import { normalizeFedexTrackingResponse } from "@/converters/tracking/fedex";
+
+/** --- UPS Internal --- */
+import { fetchUpsTracking } from "@/ups/tracking/request";
+import { normalizeUpsTrackingResponse } from "@/converters/tracking/ups";
 
 /**
- * FedEx Tracking Layer
- */
-import { createFedexTrackingClient } from "../fedex/tracking/client";
-import { normalizeFedexTrackingResponse } from "../converters/tracking/fedex";
-
-import { getUspsConfig, getFedexConfig } from "../config";
-
-/**
- * High-level aggregator for multi-carrier tracking operations.
- * 
- * This service provides a unified interface for tracking lookups, abstracting 
- * carrier-specific constraints like batch sizes (35 for USPS, 30 for FedEx) 
- * and varying response schemas. It handles initialization and parallel 
- * execution of batch requests.
- * 
- * @category Aggregators
+ * Orchestrates tracking requests across multiple carriers.
+ * @public
  */
 export class TrackingAggregator {
   /**
-   * Orchestrates parallel tracking lookups for multiple USPS packages.
-   * 
-   * USPS v3.2 enforces a maximum of 35 tracking numbers per request. 
-   * This method partitions the input array into compliant batches and 
-   * executes them concurrently to optimize performance.
-   * 
-   * @param trackingNumbers - An array of valid USPS tracking identifier strings.
+   * Initializes the aggregator with an optional configuration.
+   * * By accepting 'config' here, we ensure the library remains framework-agnostic
+   * and can support multiple instances with different credentials.
+   * @param {ShippingConfig} [config] - The configuration containing carrier credentials.
+   */
+  constructor(private config?: ShippingConfig) {}
+
+  /**
+   * Orchestrates parallel tracking lookups for multiple UPS packages.
+   * * UPS v1 is single-inquiry; we handle concurrency limits here to avoid throttles.
+   * @param {string[]} trackingNumbers - UPS tracking identifiers.
    * @returns {Promise<NormalizedTracking[]>} Standardized tracking objects.
-   * @public
+   */
+  async trackUpsBatch(trackingNumbers: string[]): Promise<NormalizedTracking[]> {
+    const upsConfig = this.config?.ups || getUpsConfig();
+    const CONCURRENCY_LIMIT = 25; 
+    const targets = trackingNumbers.slice(0, CONCURRENCY_LIMIT);
+
+    const results = await Promise.all(
+      targets.map(async (num) => {
+        try {
+          const raw = await fetchUpsTracking(num, upsConfig);
+          return normalizeUpsTrackingResponse(raw);
+        } catch {
+          return null;
+        }
+      })
+    );
+
+    return results.filter((r): r is NormalizedTracking => r !== null);
+  }
+
+  /**
+   * USPS v3.2 Batch Tracking (35 numbers per request limit).
+   * @param {string[]} trackingNumbers - Array of USPS tracking identifiers.
    */
   async trackUspsBatch(trackingNumbers: string[]): Promise<NormalizedTracking[]> {
     const BATCH_SIZE = 35; 
@@ -44,23 +71,21 @@ export class TrackingAggregator {
       chunks.push(trackingNumbers.slice(i, i + BATCH_SIZE));
     }
 
-    const config = getUspsConfig();
-    const client = new UspsTrackingClient(config);
+    const uspsConfig = this.config?.usps || getUspsConfig();
+    const client = new UspsTrackingClient(uspsConfig);
     await client.init();
 
     const results = await Promise.all(
       chunks.map(async (chunk) => {
         try {
           const rawResponse = await client.getBulkStatus(chunk);
-          
           const details = rawResponse?.trackingDetails || rawResponse?.trackingDetail || [];
           const normalizedBatch = Array.isArray(details) ? details : [details];
 
           return normalizedBatch.map((detail: any) => 
             convertUspsTrackingResponse(detail)
           );
-        } catch (error) {
-          // Suppress batch errors to allow partial success
+        } catch {
           return [];
         }
       })
@@ -70,32 +95,21 @@ export class TrackingAggregator {
   }
 
   /**
-   * Orchestrates tracking lookups for FedEx packages.
-   * 
-   * FedEx Track API v1 supports batching, but to ensure detailed scan 
-   * history is retrieved correctly via the 'trackByTrackingNumber' endpoint, 
-   * this method executes concurrent individual lookups.
-   * 
-   * @param trackingNumbers - An array of FedEx tracking numbers.
-   * @returns {Promise<NormalizedTracking[]>} Standardized tracking objects.
-   * @public
+   * FedEx Batch Tracking (30 numbers per request limit).
+   * @param {string[]} trackingNumbers - Array of FedEx tracking identifiers.
    */
   async trackFedexBatch(trackingNumbers: string[]): Promise<NormalizedTracking[]> {
-    const BATCH_SIZE = 30; // FedEx batch limit for safety
-    const config = getFedexConfig();
-    const client = createFedexTrackingClient(config);
+    const BATCH_SIZE = 30; 
+    const fedexConfig = this.config?.fedex || getFedexConfig();
+    const client = createFedexTrackingClient(fedexConfig);
     await client.init();
 
     const results = await Promise.all(
       trackingNumbers.slice(0, BATCH_SIZE).map(async (num) => {
         try {
-          /** 
-           * Calling 'getStatus' to match the method name defined 
-           * in FedexTrackingClient.
-           */
           const raw = await client.getStatus(num);
           return normalizeFedexTrackingResponse(raw);
-        } catch (e) {
+        } catch {
           return null;
         }
       })

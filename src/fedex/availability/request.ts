@@ -1,4 +1,4 @@
-import { RateRequest } from "../../types/index";
+import { RateRequest } from "@/types/index";
 
 /**
  * Transforms a RateRequest into a FedEx Transit Time availability request.

@@ -1,4 +1,4 @@
-import { FedexConfig } from "../../config";
+import { FedexConfig } from "@/config";
 import { configureFedexClient } from "../clientFactory";
 import { FedexAvailabilitySdk } from "./generated/index";
 

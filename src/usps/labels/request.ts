@@ -1,4 +1,4 @@
-import { ShipmentRequest } from "../../types/index";
+import { ShipmentRequest } from "@/types/index";
 import { LabelRequest } from "./generated/index";
 
 /**

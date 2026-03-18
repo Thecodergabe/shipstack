@@ -1,89 +1,59 @@
-# Contributing to Shipstack: USPS & FedEx Modules
+# Contributing to Shipstack
 
-Thanks for your interest in contributing! This guide explains how to regenerate the USPS and FedEx clients, extend the wrappers safely, and work within the project structure.
+First off, thank you for taking the time to contribute! Shipstack aims to be the most reliable, typed, and agnostic shipping SDK in the ecosystem. 
 
-## Regenerating the USPS Client
+This project operates in **Library Mode**, meaning we prioritize framework agnosticism, strict TypeScript definitions, and zero reliance on global environment variables.
 
-We use openapi-typescript-codegen to generate a typed USPS client from their OpenAPI spec.
+---
 
-### Install Dev Dependencies
+## Project Architecture
+
+Shipstack is organized into three distinct layers. Understanding these is key to ensuring your contribution fits the design pattern:
+
+1.  **Generated Layer (`src/[carrier]/generated`)**: Low-level clients generated directly from carrier OpenAPI specs. **Do not edit these files manually.**
+2.  **API Layer (`src/api`, `src/[carrier]`)**: Hand-written wrappers that inject configuration, handle authentication, and wrap carrier-specific errors into a unified `ShipstackError`.
+3.  **Aggregator Layer (`src/aggregator`, `src/core`)**: The "Brain" of the SDK. This is where multi-carrier orchestration, batching (e.g., USPS 35-limit chunking), and ranking logic live.
+
+---
+
+## Development Workflow
+
+### 1. Regenerating Carrier Clients
+If a carrier updates their API spec, we use `openapi-typescript-codegen` to sync our internal types.
+
+* **USPS**: Pulls directly from the official USPS Developer Portal.
+    ```bash
+    npm run generate:usps
+    ```
+* **FedEx & UPS**: Uses local specs stored in `specs/[carrier]/*.yaml` or `.json`.
+    ```bash
+    npm run generate:fedex
+    npm run generate:ups
+    ```
+* **Mass Update**:
+    ```bash
+    npm run generate:all
+    ```
+
+### 2. Extending Carrier Logic
+When adding a new feature (e.g., "Saturday Delivery" or "Hazardous Materials"):
+1.  **Update the Request Builder**: Modify the carrier's request file (e.g., `src/fedex/rates/request.ts`).
+2.  **Update the Converter**: Ensure the carrier's raw response is mapped to our universal `NormalizedRate` or `NormalizedTracking` types in `src/converters/`.
+3.  **Update the Aggregator**: Ensure the `ShippingClient` can access the new data via the aggregator layer.
+
+### 3. Working with Path Aliases
+We use TypeScript path aliases to keep imports clean and maintainable. Always use the `@/` prefix for internal imports:
+* **✅ Correct**: `import { ShipstackError } from "@/errors";`
+* **❌ Incorrect**: `import { ShipstackError } from "../../errors";`
+
+---
+
+## Testing & Verification
+
+We use **Vitest** for unit and integration testing.
+
+* **Unit Tests**: Should mock carrier API responses using raw data samples found in `tests/fixtures`.
+* **Integration Tests**: Ensure the `ShippingClient` correctly orchestrates calls across multiple carriers and respects the `ShippingConfig`.
 
 ```bash
-npm install
-```
-
-### Run the Generator
-
-```bash
-npm run generate:usps
-```
-
-This pulls the latest USPS OAuth spec and regenerates the client in `src/usps/generated/`.
-
-## Regenerating the FedEx Clients
-
-FedEx OpenAPI specs are stored locally in `specs/fedex/*.json`. These were downloaded manually from the FedEx Developer Portal.
-
-To regenerate the FedEx clients, run:
-
-```bash
-npm run generate:fedex
-```
-
-This will regenerate:
-
-- Address → `src/fedex/address/generated/`
-- Availability → `src/fedex/availability/generated/`
-- Rate → `src/fedex/rates/generated/`
-- Ship → `src/fedex/ship/generated/`
-
-## Verifying Changes
-
-After regeneration:
-
-- Check for breaking changes in method names or types
-- Update `createUspsClient()` or FedEx client factories if needed
-- Run tests or example usage
-- Confirm method names and types are stable
-- Update wrapper logic in `src/fedex/[module]/client.ts` if needed
-
-## Extending the Wrapper
-
-### USPS
-
-Add new methods to `src/usps/client.ts` that wrap generated endpoints with:
-
-- Config injection
-- Logging (`getLogger()`)
-- Error wrapping (`ShipstackError`)
-
-### FedEx
-
-Each wrapper uses `DefaultService` from its generated module. Add custom logic to:
-
-- Inject config
-- Log lifecycle events
-- Wrap errors with `ShipstackError`
-
-## Testing Locally
-
-Test the USPS client in any Node.js or edge environment:
-
-```javascript
-import { setConfig, createUspsClient } from "shipstack";
-
-setConfig({ USPS_API_KEY: "your-key" });
-
-const usps = createUspsClient();
-```
-
-## Code Style
-
-- TypeScript strict mode is enabled
-- tsup is used for builds
-- Keep USPS logic isolated in `src/usps/`
-- Keep FedEx logic isolated in `src/fedex/`
-
-## Thank You
-
-We appreciate your contributions! Feel free to open issues or PRs for new carriers, improvements, or bug fixes.
+npm run test

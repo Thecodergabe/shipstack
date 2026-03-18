@@ -1,8 +1,8 @@
-import { FedexConfig } from "../../config";
+import { FedexConfig } from "@/config";
 import { configureFedexClient } from "../clientFactory";
 import { FedexAddressSdk } from "./generated/index";
-import { NormalizedAddress } from "../../types/address";
-import { normalizeFedexAddressResponse } from "../../converters/address/fedex";
+import { NormalizedAddress } from "@/types/address";
+import { normalizeFedexAddressResponse } from "@/converters/address/fedex";
 
 /**
  * Professional Service Client for FedEx Address Validation API v1.

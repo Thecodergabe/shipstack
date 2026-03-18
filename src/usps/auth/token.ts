@@ -1,6 +1,6 @@
 import { OpenAPI, ResourcesService } from "./generated/index";
 import { TokenRequest } from "./generated/models/TokenRequest";
-import { getUspsConfig } from "../../config";
+import { getUspsConfig } from "@/config";
 
 export async function requestUspsToken({
   clientId,

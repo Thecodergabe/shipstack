@@ -1,5 +1,5 @@
 import { UspsTrackingSdk } from "./generated/UspsTrackingSdk";
-import { UspsConfig } from "../../config";
+import { UspsConfig } from "@/config";
 import type { TrackingRequest } from "./generated/index";
 import { configureUspsClient } from "../clientFactory";
 import { OpenAPI } from "./generated/core/OpenAPI";

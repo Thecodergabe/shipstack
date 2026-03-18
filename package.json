@@ -1,7 +1,7 @@
 {
   "name": "shipstack",
   "version": "1.0.0",
-  "description": "Typed, modular shipping API wrapper for USPS and FedEx with OpenAPI-generated clients, logging, and error handling",
+  "description": "Typed, modular shipping API wrapper for USPS, FedEx, and UPS with path-aliased internal modules.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "module": "dist/index.mjs",
@@ -34,10 +34,10 @@
   "scripts": {
     "/* --- Build and Lifecycle --- */": "",
     "prepare": "npm run build",
-    "build": "tsup src/index.ts --format esm,cjs --dts",
+    "build": "tsup src/index.ts --format esm,cjs --dts --clean",
+    "dev": "tsup src/index.ts --format esm,cjs --watch --dts",
     "test": "vitest",
-
-    "/* --- Core USPS Generation (Domestic & International) --- */": "",
+    "/* --- Core USPS Generation --- */": "",
     "generate:usps:auth": "openapi --input https://developers.usps.com/sites/default/files/apidoc_specs/oauth2_3_update.yaml --output src/usps/auth/generated --client fetch --name UspsAuthSdk",
     "generate:usps:rates": "openapi --input https://developers.usps.com/sites/default/files/apidoc_specs/domestic-prices_10.yaml --output src/usps/rates/generated --client fetch --name UspsRatesSdk",
     "generate:usps:address": "openapi --input https://developers.usps.com/sites/default/files/apidoc_specs/addresses-v3r2_2.yaml --output src/usps/address/generated --client fetch --name UspsAddressSdk",
@@ -46,30 +46,28 @@
     "generate:usps:intl-rates": "openapi --input https://developers.usps.com/sites/default/files/apidoc_specs/international-prices_4.yaml --output src/usps/international/rates/generated --client fetch --name UspsIntlRatesSdk",
     "generate:usps:intl-labels": "openapi --input https://developers.usps.com/sites/default/files/apidoc_specs/international-labels_8.yaml --output src/usps/international/labels/generated --client fetch --name UspsIntlLabelsSdk",
     "generate:usps": "npm run generate:usps:auth && npm run generate:usps:rates && npm run generate:usps:address && npm run generate:usps:labels && npm run generate:usps:tracking && npm run generate:usps:intl-rates && npm run generate:usps:intl-labels",
-
     "/* --- Core FedEx Generation --- */": "",
     "generate:fedex:address": "openapi --input specs/fedex/address-validation.json --output src/fedex/address/generated --client fetch --name FedexAddressSdk",
     "generate:fedex:rates": "openapi --input specs/fedex/rate.json --output src/fedex/rates/generated --client fetch --name FedexRatesSdk",
     "generate:fedex:ship": "openapi --input specs/fedex/ship.json --output src/fedex/ship/generated --client fetch --name FedexShipSdk",
     "generate:fedex:tracking": "openapi --input specs/fedex/track.json --output src/fedex/tracking/generated --client fetch --name FedexTrackingSdk",
     "generate:fedex": "npm run generate:fedex:address && npm run generate:fedex:rates && npm run generate:fedex:ship && npm run generate:fedex:tracking",
-
     "/* --- Core UPS Generation --- */": "",
     "generate:ups:auth": "openapi --input specs/ups/OAuthClientCredentials-Ready.yaml --output src/ups/auth/generated --client fetch --name UpsAuthSdk",
     "generate:ups:rates": "openapi --input specs/ups/Rating.yaml --output src/ups/rates/generated --client fetch --name UpsRatesSdk",
     "generate:ups:ship": "openapi --input specs/ups/Shipping.yaml --output src/ups/ship/generated --client fetch --name UpsShipSdk",
     "generate:ups:tracking": "openapi --input specs/ups/Tracking-Ready.yaml --output src/ups/tracking/generated --client fetch --name UpsTrackingSdk",
     "generate:ups": "npm run generate:ups:auth && npm run generate:ups:rates && npm run generate:ups:ship && npm run generate:ups:tracking",
-
     "/* --- Master Command --- */": "",
     "generate:all": "npm run generate:usps && npm run generate:fedex && npm run generate:ups"
   },
   "devDependencies": {
+    "@types/node": "^20.0.0",
     "openapi-typescript-codegen": "^0.29.0",
+    "tsc-alias": "^1.8.16",
     "tsup": "^8.5.0",
     "typescript": "^5.9.3",
-    "vitest": "^4.0.3",
-    "@types/node": "^20.0.0"
+    "vitest": "^4.0.3"
   },
   "dependencies": {
     "cross-fetch": "^4.1.0"

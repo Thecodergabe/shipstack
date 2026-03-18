@@ -1,6 +1,6 @@
 import { FedexRatesSdk, OpenAPI } from "./generated/index";
 import { configureFedexClient } from "../clientFactory";
-import { FedexConfig } from "../../config";
+import { FedexConfig } from "@/config";
 
 /**
  * Service Client for the FedEx Rates and Transit Times API v1.

@@ -1,29 +1,32 @@
 /**
  * Shipstack Internal Address Aggregator
- * * Handles the orchestration of carrier-specific address validation.
- * This file contains private helpers to keep the main 'validateAddress' API clean.
+ * * Orchestrates carrier-specific address validation and normalization.
+ * * This module serves as the private bridge between the public-facing API 
+ * and the individual carrier service clients. It ensures that incoming 
+ * requests are mapped to the correct SDK and that responses are 
+ * standardized into the universal Shipstack format.
+ * * @module Aggregator/Address
  */
 
-import { NormalizedAddress, AddressValidationRequest } from "../types/index";
-import { ShippingConfig } from "../config";
-import { ShipstackError } from "../errors";
+import { NormalizedAddress, AddressValidationRequest } from "@/types/index";
+import { ShippingConfig } from "@/config";
+import { ShipstackError } from "@/errors";
 
-// USPS Internal Modules
-import { createUspsAddressClient } from "../usps/address/client";
-import { buildUspsAddressParams } from "../usps/address/request";
+import { createUspsAddressClient } from "@/usps/address/client";
+import { buildUspsAddressParams } from "@/usps/address/request";
 
-// FedEx Internal Modules
-import { createFedexAddressClient } from "../fedex/address/client";
-import { buildFedexAddressRequest } from "../fedex/address/request";
+import { createFedexAddressClient } from "@/fedex/address/client";
+import { buildFedexAddressRequest } from "@/fedex/address/request";
+
+import { createUpsAddressClient } from "@/ups/address/client";
+import { buildUpsAddressRequest } from "@/ups/address/request";
 
 /**
- * Handles USPS-specific validation logic.
- * * This helper ensures the USPS client is initialized with library-agnostic config
- * and maps the standardized Shipstack address to the USPS v3 schema.
- * * @param {AddressValidationRequest["address"]} address - The agnostic address object.
- * @param {ShippingConfig} config - The global library configuration.
- * @returns {Promise<NormalizedAddress>} A standardized Shipstack address object.
- * @throws {ShipstackError} If USPS configuration is missing or the API call fails.
+ * Handles USPS-specific validation logic using the Domestic Prices/Address v3 API.
+ * * @param {AddressValidationRequest["address"]} address - The universal Shipstack address object.
+ * @param {ShippingConfig} config - Global configuration containing USPS credentials.
+ * @returns {Promise<NormalizedAddress>} A standardized verified address.
+ * @throws {ShipstackError} If USPS credentials are missing or the API call fails.
  * @private
  */
 async function handleUspsValidation(
@@ -34,29 +37,19 @@ async function handleUspsValidation(
     throw new ShipstackError("USPS configuration missing in ShippingConfig.", "usps");
   }
 
-  /** * FIX: Pass the config slice to the factory (Expected 1 argument)
-   */
   const client = createUspsAddressClient(config.usps);
-  
-  /** * Initialization sets up the OpenAPI context without process.env
-   */
   await client.init();
   
-  /** * MAPPING: Transform agnostic address to USPS params.
-   */
   const params = buildUspsAddressParams(address);
-
-  /** * FIX: Call the correct method name 'verifyAddress' 
-   */
   return await client.verifyAddress(params);
 }
 
 /**
- * Handles FedEx-specific validation logic.
- * * @param {AddressValidationRequest["address"]} address - The agnostic address object.
- * @param {ShippingConfig} config - The global library configuration.
- * @returns {Promise<NormalizedAddress>} A standardized Shipstack address object.
- * @throws {ShipstackError} If FedEx configuration is missing.
+ * Handles FedEx-specific validation logic using the FedEx Address Validation API.
+ * * @param {AddressValidationRequest["address"]} address - The universal Shipstack address object.
+ * @param {ShippingConfig} config - Global configuration containing FedEx credentials.
+ * @returns {Promise<NormalizedAddress>} A standardized verified address.
+ * @throws {ShipstackError} If FedEx credentials are missing.
  * @private
  */
 async function handleFedexValidation(
@@ -71,14 +64,34 @@ async function handleFedexValidation(
   await client.init();
 
   const payload = buildFedexAddressRequest(address);
-  
-  /**
-   * FedEx validation returns a NormalizedAddress via its internal converter.
-   */
   return await client.validateAddress(payload);
 }
 
 /**
- * Exporting helpers for the main API index
+ * Handles UPS-specific Extended Address Validation (XAV).
+ * * UPS XAV is utilized to provide high-precision validation and to distinguish 
+ * between Residential and Commercial classifications, which is essential 
+ * for accurate rating and label generation.
+ * * @param {AddressValidationRequest["address"]} address - The universal Shipstack address object.
+ * @param {ShippingConfig} config - Global configuration containing UPS credentials.
+ * @returns {Promise<NormalizedAddress>} A standardized verified address.
+ * @throws {ShipstackError} If UPS credentials are missing.
+ * @private
  */
-export { handleUspsValidation, handleFedexValidation };
+async function handleUpsValidation(
+  address: AddressValidationRequest["address"],
+  config: ShippingConfig
+): Promise<NormalizedAddress> {
+  if (!config.ups) {
+    throw new ShipstackError("UPS configuration missing in ShippingConfig.", "ups");
+  }
+
+  const client = createUpsAddressClient(config.ups);
+  
+  // Note: UPS Client handles OAuth2 initialization internally based on provided config
+  const payload = buildUpsAddressRequest(address);
+  
+  return await client.validateAddress(payload);
+}
+
+export { handleUspsValidation, handleFedexValidation, handleUpsValidation };

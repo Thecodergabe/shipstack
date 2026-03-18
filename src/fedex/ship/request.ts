@@ -1,4 +1,4 @@
-import { ShipmentRequest } from "../../types/index";
+import { ShipmentRequest } from "@/types/index";
 
 export function buildFedexShipRequest(request: ShipmentRequest): any {
   // FedEx v1 Ship requires weight in LBS. Converting from your weightOz.

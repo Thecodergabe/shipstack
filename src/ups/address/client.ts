@@ -1,7 +1,64 @@
-import { OpenAPI, AddressValidationService } from "./generated/index";
-import { configureUpsClient } from "../clientFactory";
+/**
+ * UPS Address Service Client
+ * * A wrapper for the generated UPS Address SDK.
+ */
 
-export function createUpsAddressClient() {
-  configureUpsClient(OpenAPI, "address");
-  return AddressValidationService;
+import { UpsAddressSdk, XAVRequestWrapper } from "./generated/index";
+import { UpsConfig } from "@/config";
+import { ShipstackError } from "@/errors";
+import { NormalizedAddress } from "@/types/index";
+import { normalizeUpsAddressResponse } from "@/converters/address/ups";
+
+export class UpsAddressClient {
+  private sdk: UpsAddressSdk;
+
+  constructor(private config: UpsConfig) {
+    this.sdk = new UpsAddressSdk({
+      BASE: config.baseUrl ?? "https://onlinetools.ups.com",
+      // Note: The SDK wrapper handles OAuth2/Basic auth based on these credentials
+      USERNAME: config.clientId,
+      PASSWORD: config.clientSecret,
+    });
+  }
+
+  async init(): Promise<void> {
+    if (!this.config.clientId || !this.config.clientSecret) {
+      throw new ShipstackError("UPS credentials (clientId/clientSecret) are required.", "ups");
+    }
+  }
+
+  /**
+   * Validates a physical address using the UPS XAV service.
+   * * RENAMED to 'validateAddress' to match the aggregator's expectation.
+   */
+  async validateAddress(payload: XAVRequestWrapper): Promise<NormalizedAddress> {
+    await this.init();
+
+    try {
+      /**
+       * UPS OpenAPI Method Signature:
+       * requestoption: 3 (Validation + Classification)
+       * regionalrequestindicator: 'False' (Standard domestic/international)
+       * maximumcandidatelistsize: 1 (Return only the best match)
+       */
+      const rawResponse = await this.sdk.addressValidation.addressValidation(
+        3,         // requestoption
+        payload,   // requestBody
+        "False",   // regionalrequestindicator
+        1,         // maximumcandidatelistsize
+        "v2"       // version
+      );
+
+      return normalizeUpsAddressResponse(rawResponse);
+    } catch (error: any) {
+      throw new ShipstackError(
+        `UPS Address Validation Failed: ${error.message || 'Unknown Error'}`,
+        "ups",
+        error.status
+      );
+    }
+  }
 }
+
+export const createUpsAddressClient = (config: UpsConfig): UpsAddressClient => 
+  new UpsAddressClient(config);

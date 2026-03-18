@@ -1,4 +1,4 @@
-import { NormalizedTracking, NormalizedTrackingEvent } from "../../types/tracking";
+import { NormalizedTracking, NormalizedTrackingEvent } from "@/types/tracking";
 
 /**
  * Normalizes a raw FedEx Tracking response into a Shipstack standard.

@@ -1,9 +1,9 @@
 import { OpenAPI, ResourcesService } from "./generated/index";
 import { configureUspsClient } from "../clientFactory";
 import { buildUspsAddressParams } from "./request";
-import { normalizeUspsAddressResponse } from "../../converters/address/usps";
-import { NormalizedAddress } from "../../types/address";
-import { UspsConfig } from "../../config"; // Import your config type
+import { normalizeUspsAddressResponse } from "@/converters/address/usps";
+import { NormalizedAddress } from "@/types/address";
+import { UspsConfig } from "@/config"; // Import your config type
 
 export class UspsAddressClient {
   constructor(private config: UspsConfig) {}

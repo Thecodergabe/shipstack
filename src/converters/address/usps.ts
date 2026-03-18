@@ -1,6 +1,6 @@
-import type { AddressResponse } from "../../usps/address/generated/models/AddressResponse";
-import { AddressAdditionalInfo } from "../../usps/address/generated/models/AddressAdditionalInfo";
-import { NormalizedAddress } from "../../types/address";
+import type { AddressResponse } from "@/usps/address/generated/models/AddressResponse";
+import { AddressAdditionalInfo } from "@/usps/address/generated/models/AddressAdditionalInfo";
+import { NormalizedAddress } from "@/types/address";
 
 /**
  * Transforms a raw USPS AddressResponse into a NormalizedAddress.

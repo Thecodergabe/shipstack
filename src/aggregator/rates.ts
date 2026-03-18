@@ -1,17 +1,11 @@
-import { createUspsRatesClient } from "../usps/rates/client";
-import { createFedexRatesClient } from "../fedex/rates/client";
-import { createUpsRatesClient } from "../ups/rating/client";
+/**
+ * Shipstack Rates Aggregator
+ * * Orchestrates parallel shipping rate lookups across all enabled carriers.
+ * This service manages the concurrency layer, ensuring that a single carrier 
+ * failure does not prevent other rates from being returned.
+ */
 
-import { buildUspsRateRequest } from "../usps/rates/request";
-import { buildUpsRateRequest } from "../ups/rating/request";
-// Note: buildFedexRateRequest logic is currently handled inline or via local helper
-import { buildFedexRateRequest } from "../fedex/rates/request"; 
-
-import { convertUspsRateResponse } from "../converters/rates/usps";
-import { convertFedexRateResponse } from "../converters/rates/fedex";
-import { convertUpsRateResponse } from "../converters/rates/ups";
-
-import { RateRequest, NormalizedRate } from "../types/index";
+import { RateRequest, NormalizedRate } from "@/types/index";
 import { 
   getEnabledCarriers, 
   getUspsConfig, 
@@ -19,72 +13,78 @@ import {
   getUpsConfig 
 } from "../config";
 
+// Client Factories
+import { createUspsRatesClient } from "../usps/rates/client";
+import { createFedexRatesClient } from "@/fedex/rates/client";
+import { createUpsRatesClient } from "@/ups/rating/client";
+
+// Request Builders
+import { buildUspsRateRequest } from "../usps/rates/request";
+import { buildFedexRateRequest } from "@/fedex/rates/request";
+import { buildUpsRateRequest } from "@/ups/rating/request";
+
+// Response Converters
+import { convertUspsRateResponse } from "@/converters/rates/usps";
+import { convertFedexRateResponse } from "@/converters/rates/fedex";
+import { convertUpsRateResponse } from "@/converters/rates/ups";
+
 /**
- * Orchestrates shipping rate lookups across all enabled carriers.
- * * * Operation Flow:
- * 1. Identifies active carriers via the global configuration state.
- * 2. Initializes carrier-specific clients using their respective configuration slices.
- * 3. Transforms the agnostic Shipstack RateRequest into carrier-specific schemas.
- * 4. Executes all requests in parallel to minimize total latency.
- * 5. Normalizes responses and sorts results by price (ascending).
- * * @param req - The standardized shipping parameters (origin, destination, dimensions, weight).
- * @returns A promise resolving to a sorted array of NormalizedRate objects.
+ * Executes a global rate lookup across USPS, FedEx, and UPS.
+ * * * Logic Flow:
+ * 1. Parallelizes requests using Promise.all for minimum latency.
+ * 2. Uses Shipstack Clients to abstract away OAuth and Header management.
+ * 3. Aggregates, flattens, and sorts results by price (ascending).
+ * * @param {RateRequest} req - Agnostic shipping parameters.
+ * @returns {Promise<NormalizedRate[]>} A sorted list of available shipping options.
+ * @public
  */
 export async function getRates(req: RateRequest): Promise<NormalizedRate[]> {
   const enabledCarriers = getEnabledCarriers();
   const tasks: Promise<NormalizedRate[]>[] = [];
 
   /**
-   * USPS Domestic Prices v3
+   * USPS Rate Implementation
    */
   if (enabledCarriers.includes("usps")) {
     tasks.push((async () => {
       try {
         const config = getUspsConfig();
         const client = createUspsRatesClient(config);
-        
-        await client.init(); 
         const uspsRequest = buildUspsRateRequest(req);
         const raw = await client.getRates(uspsRequest);
-        
         return convertUspsRateResponse(raw);
       } catch (err) {
-        console.error("Shipstack [USPS]: Failed to retrieve rates", err);
+        console.error("Shipstack [USPS]: Rate fetch failed", err);
         return [];
       }
     })());
   }
 
   /**
-   * FedEx Rate and Transit Times v3
+   * FedEx Rate Implementation
+   * * Note: Uses client.getRates() to hide 'application/json' and 'en_US' details.
    */
   if (enabledCarriers.includes("fedex")) {
     tasks.push((async () => {
       try {
         const config = getFedexConfig();
         const client = createFedexRatesClient(config);
+        await client.init(); 
         
-        // Transform Shipstack request to FedEx-specific schema
         const fedexRequest = buildFedexRateRequest(req, config.accountNumber);
-        
-        const raw = await client.rateAndTransitTimes(
-          "application/json",
-          config.clientId, // Required as API-Key in some SDK versions
-          undefined,
-          "en_US",
-          fedexRequest
-        );
+        const raw = await client.getRates(fedexRequest); // Fixed method call
         
         return convertFedexRateResponse(raw);
       } catch (err) {
-        console.error("Shipstack [FedEx]: Failed to retrieve rates", err);
+        console.error("Shipstack [FedEx]: Rate fetch failed", err);
         return [];
       }
     })());
   }
 
   /**
-   * UPS Rating API v2409
+   * UPS Rate Implementation
+   * * Note: The client internally handles the 'v2409' and 'Shop' flags.
    */
   if (enabledCarriers.includes("ups")) {
     tasks.push((async () => {
@@ -92,35 +92,21 @@ export async function getRates(req: RateRequest): Promise<NormalizedRate[]> {
         const config = getUpsConfig();
         const client = createUpsRatesClient(config);
         
-        const upsRequest = buildUpsRateRequest(req);
-        
-        const raw = await client.rate(
-          "Shop",           // Request option to return all valid services
-          upsRequest,
-          undefined,
-          "shipstack",      // Transaction source identifier
-          undefined,
-          "v2409"           // Schema subversion
-        );
+        const upsRequest = buildUpsRateRequest(req, config.accountNumber ?? "");
+        const raw = await client.getRates(upsRequest); // Fixed method call
         
         return convertUpsRateResponse(raw);
       } catch (err) {
-        console.error("Shipstack [UPS]: Failed to retrieve rates", err);
+        console.error("Shipstack [UPS]: Rate fetch failed", err);
         return [];
       }
     })());
   }
 
-  /**
-   * Execution Layer:
-   * We use Promise.all to ensure that a slow carrier doesn't block 
-   * others, though the total wait time is governed by the slowest response.
-   */
-  const allResults = await Promise.all(tasks);
-  const flattenedResults = allResults.flat();
+  // Execute all tasks in parallel
+  const results = await Promise.all(tasks);
+  const flattened = results.flat();
 
-  /**
-   * Sort results by amount to provide a 'Cheapest First' view for checkout.
-   */
-  return flattenedResults.sort((a, b) => a.cost.amount - b.cost.amount);
+  // Return sorted by cost (Cheapest First)
+  return flattened.sort((a, b) => a.cost.amount - b.cost.amount);
 }

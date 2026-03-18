@@ -1,4 +1,4 @@
-import { NormalizedTracking, NormalizedTrackingEvent } from "../../types/index";
+import { NormalizedTracking, NormalizedTrackingEvent } from "@/types/index";
 
 /**
  * Interface representing a simplified summary of a tracking event.

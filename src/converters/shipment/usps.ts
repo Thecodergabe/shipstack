@@ -1,4 +1,4 @@
-import { NormalizedShipment } from "../../types/index";
+import { NormalizedShipment } from "@/types/index";
 
 /**
  * Converts a raw USPS v3 Label response into a standardized Shipstack NormalizedShipment.

@@ -1,7 +1,7 @@
 import { OpenAPI, ResourcesService } from "./generated/index";
 import { configureUspsClient } from "../clientFactory";
-import { getUspsConfig } from "../../config";
-import { getLogger } from "../../logger";
+import { getUspsConfig } from "@/config";
+import { getLogger } from "@/logger";
 
 /**
  * Client for handling USPS OAuth2 Authentication.

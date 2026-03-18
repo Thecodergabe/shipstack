@@ -1,5 +1,5 @@
-import { NormalizedRate } from "../../types/index";
-import type { RatcResponseVO } from "../../fedex/rates/generated/models/RatcResponseVO";
+import { NormalizedRate } from "@/types/index";
+import type { RatcResponseVO } from "@/fedex/rates/generated/models/RatcResponseVO";
 
 /**
  * Normalizes the FedEx RatcResponseVO into the Shipstack NormalizedRate format.

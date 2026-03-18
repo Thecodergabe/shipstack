@@ -1,34 +1,35 @@
 /**
- * Shipstack Address Aggregator
- * * The central orchestrator for multi-carrier address validation. 
- * This service maps universal Shipstack types to carrier-specific builders 
- * and returns a standardized 'AddressValidationResult'.
+ * Shipstack Address API
+ * * Provides a unified interface for physical address validation and normalization 
+ * across USPS, FedEx, and UPS. This module handles carrier-specific client 
+ * initialization and parameter mapping.
  */
 
 import { 
   AddressValidationRequest, 
   AddressValidationResult 
-} from "../types/index";
-import { ShippingConfig } from "../config";
-import { ShipstackError } from "../errors";
+} from "@/types/index";
+import { ShippingConfig } from "@/config";
+import { ShipstackError } from "@/errors";
 
-// USPS Internal Modules
-import { createUspsAddressClient } from "../usps/address/client";
-import { buildUspsAddressParams } from "../usps/address/request";
+import { createUspsAddressClient } from "@/usps/address/client";
+import { buildUspsAddressParams } from "@/usps/address/request";
 
-// FedEx Internal Modules
-import { createFedexAddressClient } from "../fedex/address/client";
-import { buildFedexAddressRequest } from "../fedex/address/request";
+import { createFedexAddressClient } from "@/fedex/address/client";
+import { buildFedexAddressRequest } from "@/fedex/address/request";
+
+import { createUpsAddressClient } from "@/ups/address/client";
+import { buildUpsAddressRequest } from "@/ups/address/request";
 
 /**
  * Validates and standardizes a physical address using the specified carrier.
- * * * Logic Flow:
- * 1. Validates presence of carrier credentials in the config.
- * 2. Initializes the carrier-specific client (OAuth2/Basic).
- * 3. Maps agnostic 'streetLines' and 'postalCode' to carrier schemas.
- * 4. Executes the remote validation and returns a 'NormalizedAddress'.
+ * * This method orchestrates the full validation lifecycle:
+ * 1. Verifies carrier-specific credentials in the provided configuration.
+ * 2. Maps the agnostic Shipstack address format to the carrier's required schema.
+ * 3. Executes the remote validation call.
+ * 4. Returns a standardized result including the normalization status.
  * * @param {AddressValidationRequest} req - The universal address request payload.
- * @param {ShippingConfig} config - The global library configuration (passed from ShippingClient).
+ * @param {ShippingConfig} config - The library configuration containing carrier credentials.
  * @returns {Promise<AddressValidationResult>} The validation status and normalized address data.
  * @throws {ShipstackError} If configuration is missing or the carrier API rejects the request.
  * @public
@@ -46,11 +47,10 @@ export async function validateAddress(
       }
 
       const client = createUspsAddressClient(config.usps);
-      
-      /**
-       * Mapping req.address (the slice) to the USPS builder
-       */
       const params = buildUspsAddressParams(req.address);
+      
+      /** * USPS v3.2 API uses the 'verifyAddress' workflow. 
+       */
       const normalized = await client.verifyAddress(params);
 
       return {
@@ -66,12 +66,30 @@ export async function validateAddress(
       }
 
       const client = createFedexAddressClient(config.fedex);
-      await client.init(); // FedEx requires OAuth2 token initialization
+      await client.init(); 
 
-      /**
-       * Mapping req.address to the FedEx builder
-       */
       const payload = buildFedexAddressRequest(req.address);
+      const normalized = await client.validateAddress(payload);
+
+      return {
+        isValid: normalized.isValid,
+        normalizedAddress: normalized,
+        raw: normalized.raw
+      };
+    }
+
+    case "ups": {
+      if (!config.ups) {
+        throw new ShipstackError("UPS configuration missing in ShippingConfig.", "ups");
+      }
+
+      const client = createUpsAddressClient(config.ups);
+      const payload = buildUpsAddressRequest(req.address);
+      
+      /**
+       * UPS Extended Address Validation (XAV) provides both 
+       * validation and residential/commercial classification.
+       */
       const normalized = await client.validateAddress(payload);
 
       return {
@@ -84,7 +102,7 @@ export async function validateAddress(
     default:
       throw new ShipstackError(
         `Address validation for carrier '${carrier}' is not yet supported.`, 
-        "fedex"
+        "ups"
       );
   }
 }

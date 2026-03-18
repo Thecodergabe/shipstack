@@ -1,4 +1,4 @@
-import { NormalizedShipment } from "../../types/shipment";
+import { NormalizedShipment } from "@/types/shipment";
 
 /**
  * Normalizes a raw FedEx Shipment creation response.
