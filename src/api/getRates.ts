@@ -1,55 +1,64 @@
-import { RateRequest } from "../types/index";
+/**
+ * Shipstack Global Rates Aggregator
+ * Orchestrates multi-carrier rate lookups using carrier-specific builders and clients.
+ */
+
+import { RateRequest, NormalizedRate } from "../types/index";
+import { ShippingConfig } from "../config";
+import { ShipstackError } from "../errors";
+
+// 1. IMPORT THE BUILDERS (Where your FedEx builder lives)
+import { buildFedexRateRequest } from "../fedex/rates/request";
+import { buildUspsRateRequest } from "../usps/rates/request";
+
+// 2. IMPORT THE CLIENTS
+import { createFedexRatesClient } from "../fedex/rates/client";
+import { createUspsRatesClient } from "../usps/rates/client";
+
+// 3. IMPORT THE CONVERTERS
+import { convertFedexRateResponse } from "../converters/rates/fedex";
+import { convertUspsRateResponse } from "../converters/rates/usps";
 
 /**
- * Transforms a generic Shipstack RateRequest into a FedEx v1 Rating payload.
- * * * Data Mapping:
- * 1. Account Number: Injected from config to enable negotiated/discounted rates.
- * 2. Weight Conversion: Converts Ounces (Shipstack) to Pounds (FedEx) with 2-decimal precision.
- * 3. Dimensions: Uses Math.ceil to comply with carrier billing rules for rounded inches.
- * 4. Rate Types: Requests both 'ACCOUNT' (negotiated) and 'LIST' (retail) prices.
- * * @param {RateRequest} req - The internal agnostic rate request.
- * @param {string} accountNumber - The FedEx account number from the user's config.
- * @returns {any} A formatted FedEx 'RateAndTransitTimesRequest' payload.
- * @category Builders
+ * The core getRates function. 
+ * Note: It takes the global config to pass down specific slices to the clients.
  */
-export function buildFedexRateRequest(req: RateRequest, accountNumber: string): any {
-  return {
-    /** * The account number is required at the root of the body for 
-     * FedEx v1 Rates to authorize negotiated pricing.
-     */
-    accountNumber: {
-      value: accountNumber,
-    },
-    requestedShipment: {
-      shipper: {
-        address: {
-          postalCode: req.originZip,
-          countryCode: "US", // Defaulting to US for domestic rating
-        },
-      },
-      recipient: {
-        address: {
-          postalCode: req.destZip,
-          countryCode: "US",
-        },
-      },
-      pickupType: "DROPOFF_AT_FEDEX_LOCATION",
-      /** Requesting both list and account-specific rates for comparison */
-      rateRequestType: ["ACCOUNT", "LIST"],
-      requestedPackageLineItems: [
-        {
-          weight: {
-            units: "LB",
-            value: Number((req.weightOz / 16).toFixed(2)),
-          },
-          dimensions: {
-            length: Math.ceil(req.lengthInches),
-            width: Math.ceil(req.widthInches),
-            height: Math.ceil(req.heightInches),
-            units: "IN",
-          },
-        },
-      ],
-    },
-  };
+export async function getRates(req: RateRequest, config: ShippingConfig): Promise<NormalizedRate[]> {
+  const carrier = req.carrier.toLowerCase();
+
+  switch (carrier) {
+    case "fedex": {
+      if (!config.fedex) {
+        throw new ShipstackError("FedEx configuration missing.", "fedex");
+      }
+
+      // Instantiate the client with the config slice
+      const client = createFedexRatesClient(config.fedex);
+      await client.init();
+
+      // EXECUTE THE BUILDER: This is why the import above is critical
+      const fedexPayload = buildFedexRateRequest(req, config.fedex.accountNumber);
+      
+      const rawResponse = await client.getRates(fedexPayload);
+
+      return convertFedexRateResponse(rawResponse);
+    }
+
+    case "usps": {
+      if (!config.usps) {
+        throw new ShipstackError("USPS configuration missing.", "usps");
+      }
+
+      const client = createUspsRatesClient(config.usps);
+      await client.init();
+
+      const uspsPayload = buildUspsRateRequest(req);
+      const rawResponse = await client.getRates(uspsPayload);
+
+      return convertUspsRateResponse(rawResponse);
+    }
+
+    default:
+      throw new ShipstackError(`Carrier '${req.carrier}' not supported.`, "fedex");
+  }
 }

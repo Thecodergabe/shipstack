@@ -1,81 +1,84 @@
-import { AddressValidationRequest, NormalizedAddress } from "../types/address";
-import { createUspsAddressClient } from "../usps/address/client";
-import { normalizeUspsAddressResponse } from "../converters/address/usps";
-import { createFedexAddressClient } from "../fedex/address/client";
-import { normalizeFedexAddressResponse } from "../converters/address/fedex";
-import { getFedexConfig } from "../config";
-
 /**
- * Universal Address Validation Aggregator.
- * 
- * Orchestrates address validation requests across supported carriers. 
- * This is the primary library entry point for verifying deliverability 
- * and retrieving carrier-suggested address corrections.
- * 
- * @param request - The agnostic AddressValidationRequest containing the carrier and address.
- * @returns {Promise<NormalizedAddress>} A standardized validation result.
- * @throws {Error} If the specified carrier is unsupported or the API request fails.
+ * Shipstack Internal Address Aggregator
+ * * Handles the orchestration of carrier-specific address validation.
+ * This file contains private helpers to keep the main 'validateAddress' API clean.
  */
-export async function validateAddress(request: AddressValidationRequest): Promise<NormalizedAddress> {
-  const { carrier, address } = request;
 
-  switch (carrier.toLowerCase()) {
-    case "usps":
-      return handleUspsValidation(address);
+import { NormalizedAddress, AddressValidationRequest } from "../types/index";
+import { ShippingConfig } from "../config";
+import { ShipstackError } from "../errors";
 
-    case "fedex":
-      return handleFedexValidation(address);
+// USPS Internal Modules
+import { createUspsAddressClient } from "../usps/address/client";
+import { buildUspsAddressParams } from "../usps/address/request";
 
-    default:
-      throw new Error(`Carrier '${carrier}' is not supported for address validation.`);
-  }
-}
+// FedEx Internal Modules
+import { createFedexAddressClient } from "../fedex/address/client";
+import { buildFedexAddressRequest } from "../fedex/address/request";
 
 /**
  * Handles USPS-specific validation logic.
- * 
- * @param address - The raw address object from the request.
- * @returns {Promise<NormalizedAddress>}
+ * * This helper ensures the USPS client is initialized with library-agnostic config
+ * and maps the standardized Shipstack address to the USPS v3 schema.
+ * * @param {AddressValidationRequest["address"]} address - The agnostic address object.
+ * @param {ShippingConfig} config - The global library configuration.
+ * @returns {Promise<NormalizedAddress>} A standardized Shipstack address object.
+ * @throws {ShipstackError} If USPS configuration is missing or the API call fails.
  * @private
  */
-async function handleUspsValidation(address: any): Promise<NormalizedAddress> {
-  const client = createUspsAddressClient();
+async function handleUspsValidation(
+  address: AddressValidationRequest["address"], 
+  config: ShippingConfig
+): Promise<NormalizedAddress> {
+  if (!config.usps) {
+    throw new ShipstackError("USPS configuration missing in ShippingConfig.", "usps");
+  }
+
+  /** * FIX: Pass the config slice to the factory (Expected 1 argument)
+   */
+  const client = createUspsAddressClient(config.usps);
+  
+  /** * Initialization sets up the OpenAPI context without process.env
+   */
   await client.init();
   
-  // The USPS Client returns a raw 'AddressResponse'
-  const rawResponse = await client.validateAddress(address);
+  /** * MAPPING: Transform agnostic address to USPS params.
+   */
+  const params = buildUspsAddressParams(address);
 
-  // Use the converter to transform 'AddressResponse' -> 'NormalizedAddress'
-  return normalizeUspsAddressResponse(rawResponse);
+  /** * FIX: Call the correct method name 'verifyAddress' 
+   */
+  return await client.verifyAddress(params);
 }
 
 /**
  * Handles FedEx-specific validation logic.
- * 
- * @param address - The raw address object from the request.
- * @returns {Promise<NormalizedAddress>}
+ * * @param {AddressValidationRequest["address"]} address - The agnostic address object.
+ * @param {ShippingConfig} config - The global library configuration.
+ * @returns {Promise<NormalizedAddress>} A standardized Shipstack address object.
+ * @throws {ShipstackError} If FedEx configuration is missing.
  * @private
  */
-async function handleFedexValidation(address: any): Promise<NormalizedAddress> {
-  const config = getFedexConfig();
-  const client = createFedexAddressClient(config);
+async function handleFedexValidation(
+  address: AddressValidationRequest["address"],
+  config: ShippingConfig
+): Promise<NormalizedAddress> {
+  if (!config.fedex) {
+    throw new ShipstackError("FedEx configuration missing in ShippingConfig.", "fedex");
+  }
+
+  const client = createFedexAddressClient(config.fedex);
   await client.init();
 
-  // Mapping agnostic address to FedEx resolvedAddress format
-  const rawResponse = await client.validateAddress({
-    addressesToValidate: [
-      {
-        address: {
-          streetLines: address.streetLines,
-          city: address.city,
-          stateOrProvinceCode: address.stateOrProvinceCode,
-          postalCode: address.postalCode,
-          countryCode: address.countryCode,
-        },
-      },
-    ],
-  });
-
-  // Use the converter to transform 'AdvcResponseVO' -> 'NormalizedAddress'
-  return normalizeFedexAddressResponse(rawResponse);
+  const payload = buildFedexAddressRequest(address);
+  
+  /**
+   * FedEx validation returns a NormalizedAddress via its internal converter.
+   */
+  return await client.validateAddress(payload);
 }
+
+/**
+ * Exporting helpers for the main API index
+ */
+export { handleUspsValidation, handleFedexValidation };
