@@ -26,9 +26,22 @@ The recommended approach is to use the stateful ShippingClient, which stores con
 
 ```typescript
 import { ShippingClient } from "shipstack";
-const shipstack = new ShippingClient({ usps: 
-  { apiKey: "YOUR_USPS_KEY", apiSecret: "YOUR_USPS_SECRET", baseUrl: "https://sandbox.api.usps.com" }, 
-  fedex: { apiKey: "YOUR_FEDEX_KEY", secretKey: "YOUR_FEDEX_SECRET" }, ups: { apiKey: "YOUR_UPS_KEY", apiSecret: "YOUR_UPS_SECRET" } });
+
+const shipstack = new ShippingClient({ 
+  usps: { 
+    apiKey: "YOUR_USPS_KEY", 
+    apiSecret: "YOUR_USPS_SECRET", 
+    baseUrl: "https://sandbox.api.usps.com" 
+  }, 
+  fedex: { 
+    apiKey: "YOUR_FEDEX_KEY", 
+    secretKey: "YOUR_FEDEX_SECRET" 
+  }, 
+  ups: { 
+    apiKey: "YOUR_UPS_KEY", 
+    apiSecret: "YOUR_UPS_SECRET" 
+  } 
+});
 ```
 - Multi‑Carrier Rating (TypeScript)
 
@@ -41,7 +54,11 @@ const rates = await shipstack.getRankedRates( {
     widthInches: 5, 
     heightInches: 5 }, 
     ["usps", "fedex", "ups"] );
-const cheapest = rates.find(r => r.isCheapest); const fastest = rates.find(r => r.isFastest);
+
+const cheapest = rates.find(r => r.isCheapest); 
+
+const fastest = rates.find(r => r.isFastest);
+
 console.log("Cheapest: " + cheapest.serviceName + " at $" + cheapest.cost.amount);
 ```
 
@@ -49,6 +66,7 @@ console.log("Cheapest: " + cheapest.serviceName + " at $" + cheapest.cost.amount
 
 ```typescript
 const tracking = await shipstack.track(["9400100000000000000000", "9400100000000000000001"], "usps" );
+
 tracking.forEach(pkg => { console.log("Status of " + pkg.trackingNumber + ": " + pkg.status.description); });
 ```
 
@@ -58,6 +76,7 @@ Functional API (TypeScript)
 
 ```typescript
 import { getRates, validateAddress, trackShipment } from "shipstack";
+
 const rates = await getRates(request, config);
 ```
 
@@ -65,7 +84,10 @@ Direct Carrier Access (TypeScript)
 
 ```typescript
 import { createUspsRatesClient } from "shipstack";
-const usps = createUspsRatesClient(config.usps); const rawResponse = await usps.getRates({ ... });
+
+const usps = createUspsRatesClient(config.usps); 
+
+const rawResponse = await usps.getRates({ ... });
 ```
 
 ## ERROR HANDLING
@@ -74,6 +96,7 @@ Shipstack wraps carrier‑level failures into a standardized ShipstackError.
 
 ```typescript
 import { ShipstackError } from "shipstack";
+
 try { 
   await shipstack.getRates(req); 
 } catch (error) { 
@@ -88,9 +111,12 @@ try {
 
 ## Regenerating Clients
 
-**npm run generate:usps**    (sync USPS v3 specs)
-**npm run generate:fedex**  (sync local FedEx specs)
-**npm run generate:ups**     (sync local UPS specs)
+**npm run generate:usps**    (sync USPS v3 specs)  
+
+**npm run generate:fedex**  (sync local FedEx specs)  
+
+**npm run generate:ups**     (sync local UPS specs)  
+
 **npm run generate:all**     (sync all carriers)
 
 ## DOCUMENTATION LINKS
