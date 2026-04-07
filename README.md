@@ -60,37 +60,47 @@ npm install shipstack
 ```ts
 import { ShippingClient } from "shipstack";
 
-const shipstack = new ShippingClient({
-  usps: {
-    apiKey: "YOUR_USPS_KEY",
-    apiSecret: "YOUR_USPS_SECRET",
-    baseUrl: "https://api.usps.com"
-  },
-  fedex: {
-    apiKey: "YOUR_FEDEX_KEY",
-    secretKey: "YOUR_FEDEX_SECRET",
-    accountNumber: "YOUR_FEDEX_ACCOUNT"
-  },
-  ups: {
-    apiKey: "YOUR_UPS_KEY",
-    apiSecret: "YOUR_UPS_SECRET",
-    accountNumber: "YOUR_UPS_ACCOUNT"
-  }
+const shipstack = new ShippingClient({ 
+  usps: { 
+    apiKey: "YOUR_USPS_KEY", 
+    apiSecret: "YOUR_USPS_SECRET", 
+    baseUrl: "https://sandbox.api.usps.com" 
+  }, 
+  fedex: { 
+    apiKey: "YOUR_FEDEX_KEY", 
+    secretKey: "YOUR_FEDEX_SECRET" 
+  }, 
+  ups: { 
+    apiKey: "YOUR_UPS_KEY", 
+    apiSecret: "YOUR_UPS_SECRET" 
+  } 
 });
+```
+- Multi‑Carrier Rating (TypeScript)
+
+```typescript
+const rates = await shipstack.getRankedRates( { 
+    originZip: "90210", 
+    destZip: "10001", 
+    weightOz: 16, 
+    lengthInches: 10, 
+    widthInches: 5, 
+    heightInches: 5 }, 
+    ["usps", "fedex", "ups"] );
+
+const cheapest = rates.find(r => r.isCheapest); 
+
+const fastest = rates.find(r => r.isFastest);
+
+console.log("Cheapest: " + cheapest.serviceName + " at $" + cheapest.cost.amount);
 ```
 
 ---
 
-## Get Rates
+```typescript
+const tracking = await shipstack.track(["9400100000000000000000", "9400100000000000000001"], "usps" );
 
-```ts
-const rates = await shipstack.getRates({
-  carrier: "usps",
-  fromPostalCode: "90210",
-  toPostalCode: "10001",
-  weightOz: 16,
-  dimensions: { length: 10, width: 5, height: 5 }
-});
+tracking.forEach(pkg => { console.log("Status of " + pkg.trackingNumber + ": " + pkg.status.description); });
 ```
 
 ### Best Value
@@ -211,18 +221,24 @@ const rates = await getRates(request, config);
 
 ---
 
-## Error Handling
+```typescript
+import { createUspsRatesClient } from "shipstack";
+
+const usps = createUspsRatesClient(config.usps); 
+
+const rawResponse = await usps.getRates({ ... });
+```
 
 ```ts
 import { ShipstackError } from "shipstack";
 
-try {
-  await shipstack.getRates(req);
-} catch (err) {
-  if (err instanceof ShipstackError) {
-    console.error(err.message);
-    console.error(err.carrier);
-  }
+try { 
+  await shipstack.getRates(req); 
+} catch (error) { 
+  if (error instanceof ShipstackError) { 
+    console.error(error.message); 
+    console.error(error carrier);  // usps | fedex | ups 
+  } 
 }
 ```
 
@@ -230,7 +246,13 @@ try {
 
 ## Development
 
-### Regenerate carrier clients
+**npm run generate:usps**    (sync USPS v3 specs)  
+
+**npm run generate:fedex**  (sync local FedEx specs)  
+
+**npm run generate:ups**     (sync local UPS specs)  
+
+**npm run generate:all**     (sync all carriers)
 
 ```bash
 npm run generate:usps
