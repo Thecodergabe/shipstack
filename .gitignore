@@ -5,26 +5,24 @@
 
 # Dependencies
 node_modules/
-package-lock.json
 yarn.lock
+pnpm-lock.yaml
 
 # Build artifacts
 dist/
 build/
 *.tsbuildinfo
+*.tgz
 
 # Testing
 coverage/
 .vitest/
+results.json
 
-# IDE
+# IDE & OS
 .vscode/
 .idea/
 *.swp
 *.swo
-*~
-.DS_Store
-
-# OS
 .DS_Store
 Thumbs.db
