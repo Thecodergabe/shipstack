@@ -1,10 +1,21 @@
 {
   "name": "shipstack",
   "version": "1.0.0",
-  "description": "Typed, modular shipping API wrapper for USPS, FedEx, and UPS with path-aliased internal modules.",
+  "description": "Framework-agnostic, type-safe shipping SDK for USPS, FedEx, and UPS with unified orchestration and edge-ready output.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "module": "dist/index.mjs",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Thecodergabe/shipstack.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Thecodergabe/shipstack/issues"
+  },
+  "homepage": "https://github.com/Thecodergabe/shipstack#readme",
+  "publishConfig": {
+    "access": "public"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -15,19 +26,29 @@
   "files": [
     "dist",
     "LICENSE",
-    "README.md"
+    "README.md",
+    "docs"
   ],
   "keywords": [
     "shipping",
     "usps",
     "fedex",
     "ups",
+    "logistics",
     "api",
     "openapi",
-    "typescript"
+    "typescript",
+    "framework-agnostic",
+    "serverless"
   ],
   "author": "Gabriel Rodriguez",
   "license": "ISC",
+  "packageManager": "npm@10.0.0",
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/sponsors/Thecodergabe"
+  },
+  "sideEffects": false,
   "engines": {
     "node": ">=16.0.0"
   },
@@ -35,8 +56,9 @@
     "/* --- Build and Lifecycle --- */": "",
     "prepare": "npm run build",
     "build": "tsup src/index.ts --format esm,cjs --dts --clean",
-    "dev": "tsup src/index.ts --format esm,cjs --watch --dts",
-    "test": "vitest",
+    "test": "vitest run",
+    "prebuild": "npm run generate:all",
+    "prepublishOnly": "npm run test && npm run build",
     "/* --- Core USPS Generation --- */": "",
     "generate:usps:auth": "openapi --input https://developers.usps.com/sites/default/files/apidoc_specs/oauth2_3_update.yaml --output src/usps/auth/generated --client fetch --name UspsAuthSdk",
     "generate:usps:rates": "openapi --input https://developers.usps.com/sites/default/files/apidoc_specs/domestic-prices_10.yaml --output src/usps/rates/generated --client fetch --name UspsRatesSdk",
@@ -64,9 +86,9 @@
   "devDependencies": {
     "@types/node": "^20.0.0",
     "openapi-typescript-codegen": "^0.29.0",
-    "tsc-alias": "^1.8.16",
     "tsup": "^8.5.0",
     "typescript": "^5.9.3",
+    "vite-tsconfig-paths": "^6.1.1",
     "vitest": "^4.0.3"
   },
   "dependencies": {

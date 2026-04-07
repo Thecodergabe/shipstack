@@ -2,16 +2,19 @@
   "compilerOptions": {
     "target": "ES2020",
     "module": "ESNext",
+    "moduleResolution": "bundler",
     "declaration": true,
     "outDir": "dist",
+    "rootDir": "./src",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    /** Path Aliasing Configuration */
-    "baseUrl": ".",
+
+    /* Modern Path Mapping */
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["./src/*"] 
     }
   },
-  "include": ["src"]
+  "include": ["src"],
+  "exclude": ["node_modules", "dist", "docs/examples/**/*", "scripts/**/*", "**/*.example.ts"]
 }

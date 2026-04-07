@@ -27,8 +27,9 @@ export class ShipstackError extends Error {
     /** 
      * Maintains proper stack trace for where the error was thrown (V8 specific)
      */
-    if (Error.captureStackTrace) {
-      Error.captureStackTrace(this, ShipstackError);
+    // Only available in V8 (Node.js). Use type guard to avoid TS error.
+    if (typeof (Error as any).captureStackTrace === 'function') {
+      (Error as any).captureStackTrace(this, ShipstackError);
     }
   }
 }
