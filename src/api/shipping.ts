@@ -3,15 +3,41 @@
  * Standardized convenience methods for common logistics workflows.
  */
 
-import { RateRequest, NormalizedRate, ShipmentRequest, NormalizedShipment } from "@/types/index";
+import { RateRequest, NormalizedRate, ShipmentRequest, NormalizedShipment, StagedShipment } from "@/types/index";
 import { ShippingConfig } from "../config";
 import { getRates } from "./getRates";
 /** 
  * Importing the aggregator as 'aggregatorCreateShipment' to avoid 
  * collision with this file's exported 'createShipment' function.
  */
-import { createShipment as aggregatorCreateShipment } from "@/aggregator/shipment";
+import { createShipment as aggregatorCreateShipment, buildShipment as aggregatorBuildShipment } from "@/aggregator/shipment";
 import { ShipstackError } from "../errors";
+
+/**
+ * Builds a staged shipment payload for the specified carrier.
+ * * This function validates the carrier configuration and delegates
+ * the payload construction to the aggregator layer.
+ * @param req The agnostic shipment request payload.
+ * @param config The global library configuration.
+ * @returns A staged shipment object containing the carrier-specific payload.
+ */
+export async function buildShipment(
+  req: ShipmentRequest,
+  config: ShippingConfig
+): Promise<StagedShipment> {
+  // Reuse the same config validation
+  validateCarrierConfig(req.carrier, config);
+
+  // This only builds the carrier-specific payload; no label is purchased.
+  return await aggregatorBuildShipment(req);
+}
+
+/**
+ * WARNING:
+ * This method actually purchases a shipping label from the carrier.
+ * It should only be used in secure backend environments.
+ * For platform-agnostic workflows, use `buildShipment()` instead.
+ */
 
 /**
  * Creates a shipping label and returns a normalized shipment object.

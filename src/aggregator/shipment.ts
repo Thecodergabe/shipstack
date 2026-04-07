@@ -1,4 +1,4 @@
-import { ShipmentRequest, NormalizedShipment } from "@/types/index";
+import { ShipmentRequest, NormalizedShipment, StagedShipment } from "@/types/index";
 
 /**
  * USPS Service Layer
@@ -31,6 +31,50 @@ import {
   getUpsConfig, 
   getEnabledCarriers 
 } from "../config";
+
+/**
+ * Builds a staged shipment payload for the specified carrier.
+ * @param request The agnostic shipment payload.
+ * @returns A staged shipment object containing the carrier-specific payload.
+ */
+export async function buildShipment(request: ShipmentRequest): Promise<StagedShipment> {
+  const carrier = request.carrier.toLowerCase();
+
+  switch (carrier) {
+    case "usps": {
+      const uspsPayload = buildUspsLabelRequest(request);
+      return {
+        carrier: "usps",
+        serviceCode: request.serviceCode,
+        payload: uspsPayload,
+      };
+    }
+
+    case "fedex": {
+      const fedexPayload = buildFedexShipRequest(request);
+      return {
+        carrier: "fedex",
+        serviceCode: request.serviceCode,
+        payload: fedexPayload,
+      };
+    }
+
+    case "ups": {
+      const config = getUpsConfig();
+      const upsPayload = buildUpsShipRequest(request, config.accountNumber);
+      return {
+        carrier: "ups",
+        serviceCode: request.serviceCode,
+        payload: upsPayload,
+      };
+    }
+
+    default:
+      throw new Error(
+        `Shipstack Support Error: Carrier '${carrier}' is not yet supported for staged shipments.`
+      );
+  }
+}
 
 /**
  * Orchestrates the creation of shipping labels across all supported carriers.

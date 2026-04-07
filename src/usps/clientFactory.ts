@@ -1,6 +1,6 @@
 import { getUspsConfig } from "../config";
 import { getLogger } from "../logger";
-import { ShipstackError, ThrottlingError } from "../types/errors";
+import { ShipstackError, ThrottlingError } from "../errors";
 import { getUspsAccessToken } from "./auth/index";
 
 /**

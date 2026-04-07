@@ -106,3 +106,16 @@ export type NormalizedShipment = {
    */
   raw?: unknown;
 };
+
+/**
+ * A staged shipment represents the intermediate payload structure used 
+ * internally by the aggregator before it is transformed into a carrier-specific request. This allows for a clean separation between the public API's agnostic request format and the internal logic that builds the specific payloads required by each carrier's API.
+ */
+export type StagedShipment = {
+  /** The carrier this payload is intended for. */
+  carrier: "usps" | "fedex" | "ups";
+  /** The service code selected (e.g., from a rate). */
+  serviceCode: string;
+  /** Carrier-specific request payload (USPS/FedEx/UPS label/ship request). */
+  payload: unknown;
+};

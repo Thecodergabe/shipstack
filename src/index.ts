@@ -24,7 +24,8 @@ import { trackShipment as _trackShipment } from "@/api/tracking";
 import { 
   getBestValueRate as _getBestValueRate, 
   getFastestService as _getFastestService, 
-  predictCarrier as _predictCarrier 
+  predictCarrier as _predictCarrier,
+  buildShipment as _buildShipment
 } from "@/api/shipping";
 
 /**
@@ -97,7 +98,7 @@ export const trackShipment = _trackShipment;
 export const getBestValueRate = _getBestValueRate;
 export const getFastestService = _getFastestService;
 export const predictCarrier = _predictCarrier;
-
+export const buildShipment = _buildShipment;
 /**
  * 3. CORE EXPORTS
  * * Essential types, errors, and configuration models.
