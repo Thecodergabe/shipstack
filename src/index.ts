@@ -138,3 +138,6 @@ export { buildUpsRateRequest } from "@/ups/rating/request";
 export { createFedexRatesClient } from "@/fedex/rates/client";
 export { createUspsRatesClient } from "@/usps/rates/client";
 export { createUpsRatesClient } from "@/ups/rating/client";
+
+// High-level orchestrator for advanced workflows
+export { ShippingManager } from "@/core/shipping-manager";
