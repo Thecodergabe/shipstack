@@ -25,8 +25,14 @@ export function normalizeFedexAddressResponse(raw: any): NormalizedAddress {
 
   return {
     // FedEx resolved address lines
-    street1: resolved.streetLines?.[0] || "",
-    street2: resolved.streetLines?.[1] || undefined,
+    street1:
+      resolved.streetLinesToken?.[0] ||
+      resolved.streetLines?.[0] ||
+      "",
+    street2:
+      resolved.streetLinesToken?.[1] ||
+      resolved.streetLines?.[1] ||
+      undefined,
     city: resolved.city || "",
     state: resolved.stateOrProvinceCode || "",
     postalCode: resolved.postalCode || "",
@@ -34,7 +40,10 @@ export function normalizeFedexAddressResponse(raw: any): NormalizedAddress {
     
     // Logic for validity and PO Box
     isValid: resolved.classification !== "UNDETERMINED",
-    isPoBox: !!resolved.attributes?.poBox, // FedEx usually provides this in attributes
+    isPoBox:
+      !!resolved.attributes?.POBox ||
+      !!resolved.attributes?.poBox ||
+      false,
     
     // Map FedEx classification string to Shipstack AddressClassification
     classification: mapFedexClassification(resolved.classification),

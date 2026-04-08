@@ -6,7 +6,7 @@
  * * @module Shipstack
  */
 
-import { ShippingConfig } from "@/config";
+import { ShippingConfig, setShipstackConfig } from "@/config";
 import { 
   RateRequest, 
   NormalizedRate, 
@@ -25,7 +25,8 @@ import {
   getBestValueRate as _getBestValueRate, 
   getFastestService as _getFastestService, 
   predictCarrier as _predictCarrier,
-  buildShipment as _buildShipment
+  buildShipment as _buildShipment,
+  createShipment as _createShipment
 } from "@/api/shipping";
 
 /**
@@ -38,7 +39,9 @@ export class ShippingClient {
    * Initializes the Shipstack client with carrier credentials.
    * @param {ShippingConfig} config - The global library configuration.
    */
-  constructor(private config: ShippingConfig) {}
+  constructor(private config: ShippingConfig) {
+    setShipstackConfig(config);
+  }
 
   /**
    * Retrieves all available shipping rates across configured carriers.
@@ -86,6 +89,20 @@ export class ShippingClient {
   static predict(trackingNumber: string): "usps" | "fedex" | "ups" | "unknown" {
     return _predictCarrier(trackingNumber);
   }
+
+  /**
+   * Builds a staged shipment payload for the specified carrier without purchasing a label.
+   */
+  async buildShipment(request: any): Promise<any> {
+    return _buildShipment(request, this.config);
+  }
+
+  /**
+   * Creates a shipping label and returns a normalized shipment object.
+   */
+  async createShipment(request: any): Promise<any> {
+    return _createShipment(request, this.config);
+  }
 }
 
 /**
@@ -99,6 +116,7 @@ export const getBestValueRate = _getBestValueRate;
 export const getFastestService = _getFastestService;
 export const predictCarrier = _predictCarrier;
 export const buildShipment = _buildShipment;
+export const createShipment = _createShipment;
 /**
  * 3. CORE EXPORTS
  * * Essential types, errors, and configuration models.

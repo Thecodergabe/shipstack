@@ -12,6 +12,7 @@ import { AddressValidationRequest } from "@/types/index";
 export function buildFedexAddressRequest(
   address: AddressValidationRequest["address"]
 ): any {
+  const streetLines = (address as any).streetLinesToken || address.streetLines || [];
   return {
     /**
      * FedEx v1 supports batch validation, but for standard library 
@@ -20,7 +21,7 @@ export function buildFedexAddressRequest(
     addressesToValidate: [
       {
         address: {
-          streetLines: address.streetLines,
+          streetLines: Array.isArray(streetLines) ? streetLines : [streetLines],
           city: address.city,
           stateOrProvinceCode: address.stateOrProvinceCode,
           postalCode: address.postalCode,

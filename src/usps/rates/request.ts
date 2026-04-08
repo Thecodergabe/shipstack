@@ -1,7 +1,8 @@
-import type { TotalRatesQuery } from "./generated/models/TotalRatesQuery";
+ import type { TotalRatesQuery } from "./generated/models/TotalRatesQuery";
 import { ExtraService } from "./generated/models/ExtraService";
 import { priceType } from "./generated/models/priceType";
 import { mailClassOutboundOnly } from "./generated/models/mailClassOutboundOnly";
+import { BaseRatesQuery } from "./generated/models/BaseRatesQuery";
 import { RateRequest as InternalRateRequest } from "@/types/index";
 
 /**
@@ -49,6 +50,6 @@ export function buildUspsRateRequest(req: InternalRateRequest): TotalRatesQuery 
     /** * Mapping generic mail class to USPS-specific outbound mail classes.
      * Uses type assertion to bridge InternalRequest string to USPS Enum.
      */
-    mailClass: (req.mailClass as any) as mailClassOutboundOnly || undefined
+    mailClass: (req.mailClass as any) as mailClassOutboundOnly || mailClassOutboundOnly.ALL
   };
 }

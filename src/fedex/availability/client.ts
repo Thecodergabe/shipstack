@@ -44,7 +44,7 @@ export class FedexAvailabilityClient {
    * @returns {Promise<void>}
    */
   async init(): Promise<void> {
-    await configureFedexClient(this.sdk.request.config, "Availability");
+    await configureFedexClient(this.sdk.request.config, this.config, "Availability");
   }
 
   /**

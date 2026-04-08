@@ -1,29 +1,27 @@
-import { OpenAPI, ResourcesService } from "./generated/index";
+import { UspsAddressSdk } from "./generated/index";
 import { configureUspsClient } from "../clientFactory";
 import { buildUspsAddressParams } from "./request";
 import { normalizeUspsAddressResponse } from "@/converters/address/usps";
 import { NormalizedAddress } from "@/types/address";
-import { UspsConfig } from "@/config"; // Import your config type
+import { UspsConfig } from "@/config";
 
 export class UspsAddressClient {
-  constructor(private config: UspsConfig) {}
+  private sdk: UspsAddressSdk;
 
-  async init(): Promise<void> {
-    // We pass the stored config to the factory to set up OpenAPI
-    await configureUspsClient(OpenAPI, this.config.clientId);
+  constructor(private config: UspsConfig) {
+    this.sdk = new UspsAddressSdk();
   }
 
-  /**
-   * Renamed to verifyAddress to match the high-level API call
-   */
+  async init(): Promise<void> {
+    await configureUspsClient(this.sdk.request.config, "Address");
+  }
+
   async verifyAddress(
     params: ReturnType<typeof buildUspsAddressParams>
   ): Promise<NormalizedAddress> {
     await this.init();
     
-    const service = new ResourcesService(OpenAPI as any);
-    
-    const rawResponse = await service.getAddress(
+    const rawResponse = await this.sdk.resources.getAddress(
       params.streetAddress,
       params.state,
       params.firm,

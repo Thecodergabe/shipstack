@@ -1,5 +1,3 @@
-import { OpenAPI, ResourcesService } from "./generated/index";
-import { TokenRequest } from "./generated/models/TokenRequest";
 import { getUspsConfig } from "@/config";
 
 export async function requestUspsToken({
@@ -10,28 +8,34 @@ export async function requestUspsToken({
   clientSecret: string;
 }) {
   const config = getUspsConfig();
-  
-  // Set the auth base URL from config
-  OpenAPI.BASE = config.authUrl || "https://apis.usps.com/oauth2/v3";
+  const baseUrl = config.authUrl || "https://apis.usps.com/oauth2/v3";
 
-  const service = new ResourcesService(OpenAPI as any);
-
-  /**
-   * We pass the formData object. 
-   * The SDK uses 'application/x-www-form-urlencoded' as seen in your ResourcesService.
-   */
-  const response = await service.postToken({
-    grant_type: TokenRequest.grant_type.CLIENT_CREDENTIALS,
-    client_id: clientId,
-    client_secret: clientSecret,
+  // USPS requires application/json for the OAuth2 token request
+  const response = await fetch(`${baseUrl}/token`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      grant_type: "client_credentials",
+      client_id: clientId,
+      client_secret: clientSecret,
+    }),
   });
 
-  if (!("access_token" in response)) {
+  if (!response.ok) {
+    const errText = await response.text();
+    throw new Error(`USPS Token Error [${response.status}]: ${errText}`);
+  }
+
+  const data = await response.json();
+
+  if (!data || !data.access_token) {
     throw new Error("USPS token response missing access_token");
   }
 
   return {
-    token: response.access_token,
-    expiresIn: response.expires_in,
+    token: data.access_token,
+    expiresIn: data.expires_in || 28799,
   };
 }

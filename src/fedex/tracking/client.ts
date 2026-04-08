@@ -53,7 +53,7 @@ export class FedexTrackingClient {
      * We pass the SDK's internal request configuration to the factory.
      * This ensures only THIS instance is updated with the new token.
      */
-    await configureFedexClient(this.sdk.request.config, "Tracking");
+    await configureFedexClient(this.sdk.request.config, this.config, "Tracking");
   }
 
   /**

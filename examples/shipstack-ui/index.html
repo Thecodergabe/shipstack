@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Shipstack UI Dashboard</title>
+    <link rel="stylesheet" href="/src/styles.css" />
+  </head>
+  <body>
+    <div class="container">
+      <h1>Shipstack Dashboard</h1>
+      <p class="disclaimer">Carrier Testing Utility</p>
+      
+      <section>
+        <h2>Configuration</h2>
+        <div class="grid three-up">
+          <label>Carrier
+            <select id="carrier-select">
+              <option value="fedex">FedEx</option>
+              <option value="usps">USPS</option>
+              <option value="ups">UPS</option>
+            </select>
+          </label>
+          <label>
+            <span id="label-text-client-id">Client ID</span>
+            <input id="api-key" type="text" placeholder="Client ID" />
+          </label>
+          <label>
+            <span id="label-text-client-secret">Client Secret</span>
+            <input id="api-secret" type="password" placeholder="Secret" />
+          </label>
+          <label id="wrapper-account-number">
+            <span id="label-text-account-number">Account Number</span>
+            <input id="account-number" type="text" placeholder="Account #" />
+          </label>
+          <label>
+            <span id="label-text-base-url">Base URL <span style="color:#94a3b8; font-weight:normal;">(Optional)</span></span>
+            <input id="api-baseUrl" type="text" placeholder="Optional URL" />
+          </label>
+          <div class="btn-container">
+            <button id="build-client">Build Client</button>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2>Operations</h2>
+        <div class="grid two-up">
+          <div class="op-group">
+            <h3>Address Validation</h3>
+            <div class="input-stack">
+              <input id="street" type="text" value="3261 NW BANFF DR" />
+              <div class="flex-row">
+                <input id="city" type="text" value="Portland" />
+                <input id="state" type="text" value="OR" />
+              </div>
+              <div class="flex-row">
+                <input id="postal" type="text" value="97229" />
+                <input id="country" type="text" value="US" />
+              </div>
+              <button id="validate-address">Validate</button>
+            </div>
+          </div>
+
+          <div class="op-group">
+            <h3>Rate Lookup</h3>
+            <div class="input-stack">
+              <div class="flex-row">
+                <input id="origin-zip" type="text" value="90210" placeholder="Origin" />
+                <input id="dest-zip" type="text" value="97229" placeholder="Dest" />
+              </div>
+              <div class="flex-row">
+                <input id="weight" type="number" value="16" placeholder="Oz" />
+                <input id="length" type="number" value="10" placeholder="L" />
+              </div>
+              <button id="get-rates">Get Rates</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2>Dashboard Results</h2>
+        <div id="results-container">
+          <p style="color: #94a3b8; text-align:center; padding: 40px;">Execute a lookup to see results.</p>
+        </div>
+        
+        <details>
+          <summary>View Master Response JSON</summary>
+          <pre id="output"></pre>
+        </details>
+      </section>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

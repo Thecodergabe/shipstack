@@ -14,7 +14,10 @@ export async function configureUspsClient(configObj: any, moduleName: string) {
   const log = getLogger();
 
   // 1. Set the Base URL dynamically from the user-provided config
-  configObj.BASE = config.baseUrl || "https://apis.usps.com";
+  // Replace the default USPS host but keep the service-specific suffix (e.g., /addresses/v3)
+  if (config.baseUrl && configObj.BASE && configObj.BASE.startsWith("https://apis.usps.com")) {
+    configObj.BASE = configObj.BASE.replace("https://apis.usps.com", config.baseUrl);
+  }
 
   // 2. Auth Module Bypass: We don't need a token to fetch a token
   if (moduleName.toLowerCase() === "auth") return;

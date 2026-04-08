@@ -31,10 +31,10 @@ export class FedexRatesClient {
    */
   async init(): Promise<void> {
     /**
-     * We pass the specific clientId to the factory to ensure the 
+     * We pass the specific FedEx configuration to the factory to ensure the 
      * correct token is negotiated for this session.
      */
-    await configureFedexClient(OpenAPI, this.config.clientId); 
+    await configureFedexClient(OpenAPI, this.config, "Rates");
   }
 
   /**

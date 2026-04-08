@@ -48,7 +48,7 @@ export class FedexShipClient {
      * We pass the specific SDK instance's configuration to the factory 
      * to ensure local state management and prevent credential leakage.
      */
-    await configureFedexClient(this.sdk.request.config, "Ship");
+    await configureFedexClient(this.sdk.request.config, this.config, "Ship");
   }
 
   /**

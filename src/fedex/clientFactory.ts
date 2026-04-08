@@ -1,18 +1,29 @@
 import { ShipstackError } from "../errors";
-import { getFedexConfig } from "../config";
+import { FedexConfig } from "../config";
 
 /**
  * Configures the FedEx OpenAPI client with a fresh OAuth2 session.
- * * @param openApiConfig - The OpenAPI configuration object from the generated SDK.
+ * @param openApiConfig - The OpenAPI configuration object from the generated SDK.
+ * @param config - The specific FedEx configuration object to use for this session.
  * @param serviceName - The specific FedEx service being initialized (e.g., 'Tracking', 'Rates').
  * @throws {ShipstackError} If credentials are missing or the token request fails.
  */
-export async function configureFedexClient(openApiConfig: any, serviceName: string) {
-  const config = getFedexConfig();
-
+export async function configureFedexClient(
+  openApiConfig: any,
+  config: FedexConfig,
+  serviceName: string
+) {
   if (!config.clientId || !config.clientSecret) {
     throw new ShipstackError(
       `FedEx ${serviceName} requires both clientId and clientSecret.`,
+      "fedex"
+    );
+  }
+
+  const isBrowser = typeof window !== "undefined" && typeof window.document !== "undefined";
+  if (isBrowser) {
+    throw new ShipstackError(
+      `FedEx ${serviceName} OAuth cannot be performed directly from a browser. Use a server-side or edge proxy for authentication and avoid CORS/exposed secret issues.`,
       "fedex"
     );
   }

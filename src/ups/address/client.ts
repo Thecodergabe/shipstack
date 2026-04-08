@@ -8,16 +8,16 @@ import { UpsConfig } from "@/config";
 import { ShipstackError } from "@/errors";
 import { NormalizedAddress } from "@/types/index";
 import { normalizeUpsAddressResponse } from "@/converters/address/ups";
+import { UpsTokenManager } from "../oauth/manager";
 
 export class UpsAddressClient {
   private sdk: UpsAddressSdk;
+  private tokenManager: UpsTokenManager;
 
   constructor(private config: UpsConfig) {
+    this.tokenManager = new UpsTokenManager(config);
     this.sdk = new UpsAddressSdk({
-      BASE: config.baseUrl ?? "https://onlinetools.ups.com",
-      // Note: The SDK wrapper handles OAuth2/Basic auth based on these credentials
-      USERNAME: config.clientId,
-      PASSWORD: config.clientSecret,
+      BASE: config.baseUrl ?? "https://onlinetools.ups.com"
     });
   }
 
@@ -35,6 +35,9 @@ export class UpsAddressClient {
     await this.init();
 
     try {
+      const token = await this.tokenManager.getToken();
+      (this.sdk.request.config as any).TOKEN = token;
+
       /**
        * UPS OpenAPI Method Signature:
        * requestoption: 3 (Validation + Classification)

@@ -1,0 +1,18 @@
+{
+  "name": "shipstack-ui-example",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "server": "node server.mjs"
+  },
+  "dependencies": {
+    "shipstack": "file:../.."
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "vite": "^5.0.0"
+  }
+}

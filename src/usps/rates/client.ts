@@ -52,7 +52,7 @@ export class UspsRatesClient {
      */
     const sdk = new UspsRatesSdk(OpenAPI);
     
-    return await sdk.resources.postBaseRatesSearch(requestBody);
+    return await sdk.resources.postTotalRatesSearch(requestBody);
   }
 }
 

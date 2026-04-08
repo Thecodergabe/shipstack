@@ -40,6 +40,14 @@ export class UpsAuthClient {
    */
   async generateToken(): Promise<tokenSuccessResponse> {
     const log = getLogger();
+    const isBrowser = typeof window !== "undefined" && typeof window.document !== "undefined";
+
+    if (isBrowser) {
+      throw new ShipstackError(
+        "UPS OAuth cannot be performed directly from the browser. Use a server-side or edge proxy for authentication.",
+        "ups"
+      );
+    }
 
     if (!this.config.clientId || !this.config.clientSecret) {
       throw new ShipstackError(

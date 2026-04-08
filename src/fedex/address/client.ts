@@ -24,7 +24,7 @@ export class FedexAddressClient {
    * Must be called before validateAddress().
    */
   async init(): Promise<void> {
-    await configureFedexClient(this.sdk.request.config, "Address");
+    await configureFedexClient(this.sdk.request.config, this.config, "Address");
   }
 
   /**

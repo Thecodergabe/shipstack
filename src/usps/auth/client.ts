@@ -1,4 +1,4 @@
-import { OpenAPI, ResourcesService } from "./generated/index";
+import { OpenAPI, UspsAuthSdk } from "./generated/index";
 import { configureUspsClient } from "../clientFactory";
 import { getUspsConfig } from "@/config";
 import { getLogger } from "@/logger";
@@ -22,14 +22,14 @@ export class UspsAuthClient {
     await configureUspsClient(OpenAPI, "auth");
     
     // Use the user-provided auth URL
-    OpenAPI.BASE = config.authUrl;
+    OpenAPI.BASE = config.authUrl || "https://apis.usps.com/oauth2/v3";
 
-    const service = new ResourcesService(OpenAPI as any);
+    const sdk = new UspsAuthSdk(OpenAPI);
 
     this.logger.debug("[USPS] Requesting new OAuth token...");
 
-    return service.postToken({
-      grant_type: "client_credentials",
+    return sdk.resources.postToken({
+      grant_type: "client_credentials" as any,
       client_id: config.clientId,
       client_secret: config.clientSecret
     });
