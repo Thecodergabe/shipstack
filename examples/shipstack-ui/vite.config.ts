@@ -4,7 +4,7 @@ import path from 'path';
 export default defineConfig({
   resolve: {
     alias: {
-      shipstack: path.resolve(__dirname, '../..', 'src', 'index.ts'),
+      '@teralabs/shipstack': path.resolve(__dirname, '../..', 'src', 'index.ts'),
       '@': path.resolve(__dirname, '../..', 'src')
     }
   }

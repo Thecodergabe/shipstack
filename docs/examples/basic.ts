@@ -15,7 +15,7 @@ import {
   getRates,
   trackShipment,
   validateAddress
-} from "shipstack";
+} from "@teralabs/shipstack";
 
 import { config } from "../config.example";
 

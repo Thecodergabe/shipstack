@@ -47,7 +47,7 @@ Works in Node.js, Bun, Deno, Cloudflare Workers, and other modern JavaScript run
 ## Installation
 
 ```bash
-npm install shipstack
+npm install @teralabs/shipstack
 ```
 
 ---
@@ -57,7 +57,7 @@ npm install shipstack
 ### 1. Create your config and clients
 
 ```ts
-import { ShippingClient, ShippingManager } from "shipstack";
+import { ShippingClient, ShippingManager } from "@teralabs/shipstack";
 
 const config = {
   environment: "sandbox",
@@ -130,7 +130,7 @@ tracking.forEach(pkg => {
 ### Best Value (Functional API)
 
 ```ts
-import { getBestValueRate } from "shipstack";
+import { getBestValueRate } from "@teralabs/shipstack";
 
 const best = await getBestValueRate(
   {
@@ -149,7 +149,7 @@ const best = await getBestValueRate(
 ### Fastest Service (Functional API)
 
 ```ts
-import { getFastestService } from "shipstack";
+import { getFastestService } from "@teralabs/shipstack";
 
 const fastest = await getFastestService(
   {
@@ -187,7 +187,7 @@ const result = await client.validateAddress({
 ## Track Shipments
 
 ```ts
-import { trackShipment } from "shipstack";
+import { trackShipment } from "@teralabs/shipstack";
 
 const tracking = await trackShipment(
   ["9400100000000000000000", "9400100000000000000001"],
@@ -211,7 +211,7 @@ This is recommended for:
 - Manual label creation
 
 ```ts
-import { buildShipment } from "shipstack";
+import { buildShipment } from "@teralabs/shipstack";
 
 const staged = await buildShipment(
   {
@@ -256,7 +256,7 @@ This does not purchase postage.
 This method purchases a real label and must only be used in secure backend environments.
 
 ```ts
-import { createShipment } from "shipstack";
+import { createShipment } from "@teralabs/shipstack";
 
 const shipment = await createShipment(
   {
@@ -321,7 +321,7 @@ import {
   predictCarrier,
   validateAddress,
   trackShipment
-} from "shipstack";
+} from "@teralabs/shipstack";
 
 const rates = await getRates(
   {
@@ -345,7 +345,7 @@ const carrier = predictCarrier("1Z9999999999999999");
 Only the low-level rate clients are exported directly from the package entrypoint.
 
 ```ts
-import { createUspsRatesClient } from "shipstack";
+import { createUspsRatesClient } from "@teralabs/shipstack";
 
 const usps = createUspsRatesClient(config.usps);
 const rawResponse = await usps.getRates({ /* USPS request payload */ });
@@ -356,7 +356,7 @@ const rawResponse = await usps.getRates({ /* USPS request payload */ });
 ## Error Handling
 
 ```ts
-import { ShipstackError } from "shipstack";
+import { ShipstackError } from "@teralabs/shipstack";
 
 const request = {
   carrier: "usps",

@@ -43,7 +43,7 @@ const rates = await client.getRates({
 ### Using the Functional API
 
 ```ts
-import { getRates } from "shipstack";
+import { getRates } from "@teralabs/shipstack";
 
 const rates = await getRates(request, config);
 ```
@@ -106,7 +106,7 @@ type NormalizedRate = {
 These helpers work on a single-carrier `RateRequest`.
 
 ```ts
-import { getBestValueRate, getFastestService } from "shipstack";
+import { getBestValueRate, getFastestService } from "@teralabs/shipstack";
 
 const cheapest = await getBestValueRate(request, config);
 const fastest = await getFastestService(request, config);

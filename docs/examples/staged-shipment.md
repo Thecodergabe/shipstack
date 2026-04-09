@@ -3,7 +3,7 @@
 This example demonstrates Shipstack's safe shipment builder. It generates a carrier-specific payload without purchasing a label.
 
 ```ts
-import { buildShipment } from "shipstack";
+import { buildShipment } from "@teralabs/shipstack";
 import { config } from "../config.example";
 
 async function exampleStagedShipment() {

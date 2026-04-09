@@ -1,4 +1,4 @@
-import { getRates, type RateRequest } from "shipstack";
+import { getRates, type RateRequest } from "@teralabs/shipstack";
 
 import { config } from "../config.example";
 

@@ -22,7 +22,7 @@ You may track one or many tracking numbers at once.
 ## Functional Example
 
 ```ts
-import { trackShipment } from "shipstack";
+import { trackShipment } from "@teralabs/shipstack";
 
 const tracking = await trackShipment(
   ["9400100000000000000000"],

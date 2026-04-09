@@ -51,7 +51,7 @@ Shipstack works in Node.js, Deno, Bun, Cloudflare Workers, and any modern JavaSc
 ## Installation
 
 ```bash
-npm install shipstack
+npm install @teralabs/shipstack
 ```
 
 ---
@@ -59,7 +59,7 @@ npm install shipstack
 ## Quick Start
 
 ```ts
-import { ShippingClient, ShippingManager } from "shipstack";
+import { ShippingClient, ShippingManager } from "@teralabs/shipstack";
 
 const config = {
   environment: "sandbox",
@@ -154,7 +154,7 @@ const result = await client.validateAddress({
 ### Direct Carrier Access
 
 ```ts
-import { createUspsRatesClient } from "shipstack";
+import { createUspsRatesClient } from "@teralabs/shipstack";
 
 const usps = createUspsRatesClient(config.usps);
 const raw = await usps.getRates({ ... });
@@ -167,7 +167,7 @@ const raw = await usps.getRates({ ... });
 ### Functional API
 
 ```ts
-import { getRates, validateAddress, trackShipment } from "shipstack";
+import { getRates, validateAddress, trackShipment } from "@teralabs/shipstack";
 
 const rates = await getRates(
   {
@@ -206,7 +206,7 @@ const ranked = await manager.getRankedRates(
 Generates a carrier‑specific payload without purchasing a label.
 
 ```ts
-import { buildShipment } from "shipstack";
+import { buildShipment } from "@teralabs/shipstack";
 
 const staged = await buildShipment({ /* ShipmentRequest */ }, config);
 ```
@@ -216,7 +216,7 @@ const staged = await buildShipment({ /* ShipmentRequest */ }, config);
 Purchases a real label.
 
 ```ts
-import { createShipment } from "shipstack";
+import { createShipment } from "@teralabs/shipstack";
 
 const shipment = await createShipment({ /* ShipmentRequest */ }, config);
 ```
@@ -228,7 +228,7 @@ const shipment = await createShipment({ /* ShipmentRequest */ }, config);
 All errors are standardized as `ShipstackError`.
 
 ```ts
-import { ShipstackError } from "shipstack";
+import { ShipstackError } from "@teralabs/shipstack";
 
 try {
   await client.getRates({

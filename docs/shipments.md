@@ -25,7 +25,7 @@ This mode is ideal for:
 ### Example
 
 ```ts
-import { buildShipment } from "shipstack";
+import { buildShipment } from "@teralabs/shipstack";
 
 const staged = await buildShipment(
   {
@@ -89,7 +89,7 @@ This workflow must only be used in secure backend environments.
 ### Example
 
 ```ts
-import { createShipment } from "shipstack";
+import { createShipment } from "@teralabs/shipstack";
 
 const shipment = await createShipment(request, config);
 

@@ -1,4 +1,4 @@
-import type { ShippingConfig } from "shipstack";
+import type { ShippingConfig } from "@teralabs/shipstack";
 
 /**
  * Shipstack Example Configuration

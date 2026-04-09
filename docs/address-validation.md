@@ -48,7 +48,7 @@ const result = await client.validateAddress({
 ## Using the Functional API
 
 ```ts
-import { validateAddress } from "shipstack";
+import { validateAddress } from "@teralabs/shipstack";
 
 const result = await validateAddress(request, config);
 ```

@@ -9,7 +9,7 @@
  * - This will generate a real tracking number and label.
  */
 
-import { createShipment } from "shipstack";
+import { createShipment } from "@teralabs/shipstack";
 import { config } from "../config.example";
 
 async function exampleActualShipment() {
