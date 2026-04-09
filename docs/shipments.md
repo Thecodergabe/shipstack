@@ -2,8 +2,8 @@
 
 Shipstack supports two distinct shipment workflows:
 
-1. **Staged Shipments (Safe Mode)**  
-2. **Actual Shipments (Advanced Mode)**  
+1. **Staged Shipments (Safe Mode)**
+2. **Actual Shipments (Advanced Mode)**
 
 Understanding the difference is essential for building secure and flexible shipping systems.
 
@@ -11,16 +11,16 @@ Understanding the difference is essential for building secure and flexible shipp
 
 ## 1. Staged Shipments (Safe Mode)
 
-Staged shipments generate a **carrier‑specific shipment payload** without calling the carrier API or purchasing a label.
+Staged shipments generate a **carrier-specific shipment payload** without calling the carrier API or purchasing a label.
 
 This mode is ideal for:
 
-- Storefronts  
-- Serverless and edge environments  
-- Email‑based label workflows  
-- Custom dashboards  
-- Platforms where merchants finalize labels later  
-- Any environment where you cannot expose carrier credentials  
+- Storefronts
+- Serverless and edge environments
+- Email-based label workflows
+- Custom dashboards
+- Platforms where merchants finalize labels later
+- Any environment where you cannot expose carrier credentials
 
 ### Example
 
@@ -31,14 +31,33 @@ const staged = await buildShipment(
   {
     carrier: "fedex",
     serviceCode: "FEDEX_GROUND",
-    fromAddress: { ... },
-    toAddress: { ... },
-    package: { ... }
+    fromAddress: {
+      name: "Sender Name",
+      streetLines: ["123 Warehouse Rd"],
+      city: "Los Angeles",
+      stateOrProvinceCode: "CA",
+      postalCode: "90001",
+      countryCode: "US"
+    },
+    toAddress: {
+      name: "Customer Name",
+      streetLines: ["55 W 46th St"],
+      city: "New York",
+      stateOrProvinceCode: "NY",
+      postalCode: "10036",
+      countryCode: "US"
+    },
+    package: {
+      weightOz: 32,
+      lengthInches: 12,
+      widthInches: 8,
+      heightInches: 4
+    }
   },
   config
 );
 
-console.log(staged.payload); // FedEx Ship API request body
+console.log(staged.payload);
 ```
 
 ### What Staged Shipments Provide
@@ -47,16 +66,16 @@ console.log(staged.payload); // FedEx Ship API request body
 type StagedShipment = {
   carrier: "usps" | "fedex" | "ups";
   serviceCode: string;
-  payload: unknown; // carrier‑specific request body
+  payload: unknown;
 };
 ```
 
-### What Staged Shipments Do NOT Do
+### What Staged Shipments Do Not Do
 
-- Do not call USPS/FedEx/UPS  
-- Do not purchase postage  
-- Do not generate a label  
-- Do not require backend security  
+- Do not call USPS, FedEx, or UPS
+- Do not purchase postage
+- Do not generate a label
+- Do not require backend security
 
 This makes staged shipments safe for any environment, including the browser.
 
@@ -82,25 +101,27 @@ console.log(shipment.trackingNumber);
 
 ```ts
 type NormalizedShipment = {
-  carrier: string;
+  carrier: "usps" | "fedex" | "ups";
   trackingNumber: string;
   serviceCode: string;
-  cost: {
+  serviceName: string;
+  label: {
+    format: "PDF" | "PNG" | "ZPL" | "GIF";
+    base64: string;
+  };
+  charges?: {
     amount: number;
     currency: string;
   };
-  label: {
-    base64: string;
-    format: "PDF" | "PNG" | "ZPL";
-  };
+  raw?: unknown;
 };
 ```
 
 ### What Actual Shipments Require
 
-- Secure backend environment  
-- Valid carrier credentials  
-- Merchant authorization to purchase labels  
+- Secure backend environment
+- Valid carrier credentials
+- Merchant authorization to purchase labels
 
 ---
 
@@ -121,16 +142,16 @@ type NormalizedShipment = {
 ## When to Use Each Mode
 
 ### Use **Staged Shipments** when:
-- You want to preview or store the carrier payload  
-- You want to send the payload to a merchant for approval  
-- You are running in a serverless or edge environment  
-- You want to avoid accidental label purchases  
-- You are building a storefront or checkout flow  
+- You want to preview or store the carrier payload
+- You want to send the payload to a merchant for approval
+- You are running in a serverless or edge environment
+- You want to avoid accidental label purchases
+- You are building a storefront or checkout flow
 
 ### Use **Actual Shipments** when:
-- You are ready to purchase a label  
-- You are running in a secure backend  
-- You need a real tracking number and label file  
-- You are automating fulfillment  
+- You are ready to purchase a label
+- You are running in a secure backend
+- You need a real tracking number and label file
+- You are automating fulfillment
 
 ---

@@ -3,13 +3,15 @@
  *
  * Demonstrates:
  * - Fetching rates
+ * - Ranking rates across carriers
  * - Tracking shipments
  * - Validating addresses
- * - Using both the ShippingClient and functional API
+ * - Using ShippingClient, ShippingManager, and the functional API
  */
 
 import {
   ShippingClient,
+  ShippingManager,
   getRates,
   trackShipment,
   validateAddress
@@ -18,38 +20,58 @@ import {
 import { config } from "../config.example";
 
 // ---------------------------------------------
-// Stateful API (ShippingClient)
+// Stateful API (ShippingClient + ShippingManager)
 // ---------------------------------------------
 
-const shipstack = new ShippingClient(config);
+const client = new ShippingClient(config);
+const manager = new ShippingManager(config);
 
 async function exampleStateful() {
   // 1. Get Rates
-  const rates = await shipstack.getRates({
+  const rates = await client.getRates({
     carrier: "usps",
-    fromPostalCode: "90210",
-    toPostalCode: "10001",
-    weightOz: 16
+    originZip: "90210",
+    destZip: "10001",
+    weightOz: 16,
+    lengthInches: 10,
+    widthInches: 5,
+    heightInches: 5
   });
 
   console.log("USPS Rates:", rates);
 
-  // 2. Track a Shipment
-  const tracking = await shipstack.track(
+  // 2. Rank Rates Across Carriers
+  const rankedRates = await manager.getRankedRates(
+    {
+      originZip: "90210",
+      destZip: "10001",
+      weightOz: 16,
+      lengthInches: 10,
+      widthInches: 5,
+      heightInches: 5
+    },
+    ["usps", "fedex", "ups"]
+  );
+
+  console.log("Ranked Rates:", rankedRates);
+
+  // 3. Track a Shipment
+  const tracking = await client.track(
     ["9400100000000000000000"],
     "usps"
   );
 
   console.log("Tracking:", tracking);
 
-  // 3. Validate an Address
-  const address = await shipstack.validateAddress({
+  // 4. Validate an Address
+  const address = await client.validateAddress({
     carrier: "fedex",
     address: {
-      street1: "123 Main St",
+      streetLines: ["123 Main St"],
       city: "New York",
-      state: "NY",
-      postalCode: "10001"
+      stateOrProvinceCode: "NY",
+      postalCode: "10001",
+      countryCode: "US"
     }
   });
 
@@ -65,9 +87,12 @@ async function exampleFunctional() {
   const rates = await getRates(
     {
       carrier: "ups",
-      fromPostalCode: "94103",
-      toPostalCode: "10001",
-      weightOz: 32
+      originZip: "94103",
+      destZip: "10001",
+      weightOz: 32,
+      lengthInches: 12,
+      widthInches: 8,
+      heightInches: 6
     },
     config
   );
@@ -88,10 +113,11 @@ async function exampleFunctional() {
     {
       carrier: "usps",
       address: {
-        street1: "1600 Amphitheatre Pkwy",
+        streetLines: ["1600 Amphitheatre Pkwy"],
         city: "Mountain View",
-        state: "CA",
-        postalCode: "94043"
+        stateOrProvinceCode: "CA",
+        postalCode: "94043",
+        countryCode: "US"
       }
     },
     config

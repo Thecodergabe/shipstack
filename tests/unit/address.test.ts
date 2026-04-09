@@ -5,8 +5,9 @@ describe('Address Validation', () => {
   it('should validate and normalize an address for USPS', async () => {
     const client = new ShippingClient({
       usps: { 
-        apiKey: 'test', 
-        apiSecret: 'test', 
+        enabled: true,
+        clientId: 'test-usps-client', 
+        clientSecret: 'test-usps-secret', 
         baseUrl: 'https://sandbox.api.usps.com' 
       }
     });

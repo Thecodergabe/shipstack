@@ -17,7 +17,11 @@ describe('Rates Aggregator', () => {
   beforeEach(() => {
     // Fake the environment entirely
     vi.spyOn(configMap, 'getEnabledCarriers').mockReturnValue(['usps']);
-    vi.spyOn(configMap, 'getUspsConfig').mockReturnValue({ apiKey: 'fake' } as any);
+    vi.spyOn(configMap, 'getUspsConfig').mockReturnValue({
+      enabled: true,
+      clientId: 'fake-client',
+      clientSecret: 'fake-secret'
+    } as any);
   });
 
   it('should fetch rates without requiring real config keys', async () => {

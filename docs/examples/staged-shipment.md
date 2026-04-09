@@ -1,48 +1,37 @@
-/**
- * Staged Shipment Example
- *
- * Demonstrates how to use Shipstack's safe-mode shipment builder.
- * This generates a carrier-specific payload WITHOUT purchasing a label.
- *
- * Ideal for:
- * - Storefront checkout flows
- * - Serverless and edge environments
- * - Email-based label workflows
- * - Merchant approval flows
- */
+# Staged Shipment Example
 
+This example demonstrates Shipstack's safe shipment builder. It generates a carrier-specific payload without purchasing a label.
+
+```ts
 import { buildShipment } from "shipstack";
-import { config } from "./config.example";
+import { config } from "../config.example";
 
 async function exampleStagedShipment() {
   const staged = await buildShipment(
     {
       carrier: "fedex",
       serviceCode: "FEDEX_GROUND",
-
       fromAddress: {
         name: "Sender Name",
-        street1: "123 Warehouse Rd",
+        streetLines: ["123 Warehouse Rd"],
         city: "Los Angeles",
-        state: "CA",
-        postalCode: "90001"
+        stateOrProvinceCode: "CA",
+        postalCode: "90001",
+        countryCode: "US"
       },
-
       toAddress: {
         name: "Customer Name",
-        street1: "55 W 46th St",
+        streetLines: ["55 W 46th St"],
         city: "New York",
-        state: "NY",
-        postalCode: "10036"
+        stateOrProvinceCode: "NY",
+        postalCode: "10036",
+        countryCode: "US"
       },
-
       package: {
         weightOz: 32,
-        dimensions: {
-          length: 12,
-          width: 8,
-          height: 4
-        }
+        lengthInches: 12,
+        widthInches: 8,
+        heightInches: 4
       }
     },
     config
@@ -50,7 +39,8 @@ async function exampleStagedShipment() {
 
   console.log("Carrier:", staged.carrier);
   console.log("Service Code:", staged.serviceCode);
-  console.log("Payload:", staged.payload); // FedEx Ship API request body
+  console.log("Payload:", staged.payload);
 }
 
 exampleStagedShipment();
+```

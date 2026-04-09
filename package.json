@@ -1,6 +1,6 @@
 {
   "name": "shipstack",
-  "version": "1.0.0",
+  "version": "1.2.0",
   "description": "Framework-agnostic, type-safe shipping SDK for USPS, FedEx, and UPS with unified orchestration and edge-ready output.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

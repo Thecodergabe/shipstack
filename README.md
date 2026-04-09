@@ -1,47 +1,46 @@
 # Shipstack
 
-Shipstack is a high‑performance, type‑safe, framework‑agnostic shipping SDK for USPS, FedEx, and UPS.  
+Shipstack is a high-performance, type-safe, framework-agnostic shipping SDK for USPS, FedEx, and UPS.  
 It provides unified rates, address validation, tracking, and shipment creation through a consistent, predictable API.
 
 Shipstack is designed for:
 
-- Storefronts (Nuxt, Next.js, SvelteKit, Remix)  
-- Serverless functions (Cloudflare, Vercel, Netlify)  
-- Node.js backends  
-- Edge runtimes  
-- Open‑source projects that need reliable logistics tooling  
+- Storefronts (Nuxt, Next.js, SvelteKit, Remix)
+- Serverless functions (Cloudflare, Vercel, Netlify)
+- Node.js backends
+- Edge runtimes
+- Open-source projects that need reliable logistics tooling
 
 Shipstack does not assume a backend, database, or dashboard.  
-You choose the workflow — Shipstack provides the building blocks.
+You choose the workflow. Shipstack provides the building blocks.
 
 ---
 
 ## Features
 
-### Unified Orchestration  
-A single API surface for USPS, FedEx, and UPS.
+### Unified Orchestration
+A single SDK surface for USPS, FedEx, and UPS.
 
-### Multi‑Carrier Rates  
-Fetch normalized rates from any carrier and compare them easily.
+### Multi-Carrier Rates
+Fetch normalized rates from any carrier and rank them for checkout.
 
-### Address Validation  
+### Address Validation
 Standardized address verification across all carriers.
 
-### Tracking Aggregator  
-Batch tracking with automatic carrier‑specific chunking and concurrency limits.
+### Tracking Aggregator
+Batch tracking with automatic carrier-specific chunking and concurrency limits.
 
-### Staged Shipments (Safe Mode)  
-Generate carrier‑specific shipment payloads without purchasing a label.  
-Ideal for storefronts, email workflows, or custom dashboards.
+### Staged Shipments (Safe Mode)
+Generate carrier-specific shipment payloads without purchasing a label.
 
-### Actual Label Creation (Advanced Mode)  
-Backend‑only method to purchase real labels from USPS, FedEx, or UPS.
+### Actual Label Creation (Advanced Mode)
+Backend-only workflow for purchasing real labels.
 
-### Type‑Safe  
-Strict TypeScript definitions for every request, response, and normalized model.
+### Type-Safe
+Strict TypeScript definitions for public request, response, and normalized models.
 
-### Runtime Agnostic  
-Works in Node.js, Bun, Deno, Cloudflare Workers, and more.
+### Runtime Agnostic
+Works in Node.js, Bun, Deno, Cloudflare Workers, and other modern JavaScript runtimes.
 
 ---
 
@@ -55,64 +54,115 @@ npm install shipstack
 
 ## Quick Start
 
-### 1. Initialize the client
+### 1. Create your config and clients
 
 ```ts
-import { ShippingClient } from "shipstack";
+import { ShippingClient, ShippingManager } from "shipstack";
 
-const shipstack = new ShippingClient({ 
-  usps: { 
-    apiKey: "YOUR_USPS_KEY", 
-    apiSecret: "YOUR_USPS_SECRET", 
-    baseUrl: "https://sandbox.api.usps.com" 
-  }, 
-  fedex: { 
-    apiKey: "YOUR_FEDEX_KEY", 
-    secretKey: "YOUR_FEDEX_SECRET" 
-  }, 
-  ups: { 
-    apiKey: "YOUR_UPS_KEY", 
-    apiSecret: "YOUR_UPS_SECRET" 
-  } 
+const config = {
+  environment: "sandbox",
+  usps: {
+    enabled: true,
+    clientId: "YOUR_USPS_CLIENT_ID",
+    clientSecret: "YOUR_USPS_CLIENT_SECRET",
+    baseUrl: "https://sandbox.api.usps.com"
+  },
+  fedex: {
+    enabled: true,
+    clientId: "YOUR_FEDEX_CLIENT_ID",
+    clientSecret: "YOUR_FEDEX_CLIENT_SECRET",
+    accountNumber: "YOUR_FEDEX_ACCOUNT_NUMBER"
+  },
+  ups: {
+    enabled: true,
+    clientId: "YOUR_UPS_CLIENT_ID",
+    clientSecret: "YOUR_UPS_CLIENT_SECRET",
+    accountNumber: "YOUR_UPS_ACCOUNT_NUMBER"
+  }
+};
+
+const client = new ShippingClient(config);
+const manager = new ShippingManager(config);
+```
+
+Use `ShippingClient` for direct per-carrier operations. Use `ShippingManager` for multi-carrier checkout ranking.
+
+### 2. Compare carriers with `ShippingManager`
+
+```ts
+const rankedRates = await manager.getRankedRates(
+  {
+    originZip: "90210",
+    destZip: "10001",
+    weightOz: 16,
+    lengthInches: 10,
+    widthInches: 5,
+    heightInches: 5
+  },
+  ["usps", "fedex", "ups"]
+);
+
+const cheapest = rankedRates.find(rate => rate.isCheapest);
+const fastest = rankedRates.find(rate => rate.isFastest);
+
+if (cheapest) {
+  console.log("Cheapest:", cheapest.serviceName, cheapest.cost.amount);
+}
+
+if (fastest) {
+  console.log("Fastest:", fastest.serviceName, fastest.deliveryDays);
+}
+```
+
+### 3. Track with `ShippingClient`
+
+```ts
+const tracking = await client.track(
+  ["9400100000000000000000", "9400100000000000000001"],
+  "usps"
+);
+
+tracking.forEach(pkg => {
+  console.log("Status of " + pkg.trackingNumber + ": " + pkg.status);
 });
 ```
-- Multi‑Carrier Rating (TypeScript)
 
-```typescript
-const rates = await shipstack.getRankedRates( { 
-    originZip: "90210", 
-    destZip: "10001", 
-    weightOz: 16, 
-    lengthInches: 10, 
-    widthInches: 5, 
-    heightInches: 5 }, 
-    ["usps", "fedex", "ups"] );
-
-const cheapest = rates.find(r => r.isCheapest); 
-
-const fastest = rates.find(r => r.isFastest);
-
-console.log("Cheapest: " + cheapest.serviceName + " at $" + cheapest.cost.amount);
-```
-
----
-
-```typescript
-const tracking = await shipstack.track(["9400100000000000000000", "9400100000000000000001"], "usps" );
-
-tracking.forEach(pkg => { console.log("Status of " + pkg.trackingNumber + ": " + pkg.status.description); });
-```
-
-### Best Value
+### Best Value (Functional API)
 
 ```ts
-const best = await shipstack.getBestValueRate(request, config);
+import { getBestValueRate } from "shipstack";
+
+const best = await getBestValueRate(
+  {
+    carrier: "usps",
+    originZip: "90210",
+    destZip: "10001",
+    weightOz: 16,
+    lengthInches: 10,
+    widthInches: 5,
+    heightInches: 5
+  },
+  config
+);
 ```
 
-### Fastest Service
+### Fastest Service (Functional API)
 
 ```ts
-const fastest = await shipstack.getFastestService(request, config);
+import { getFastestService } from "shipstack";
+
+const fastest = await getFastestService(
+  {
+    carrier: "fedex",
+    originZip: "90210",
+    destZip: "10001",
+    weightOz: 16,
+    lengthInches: 10,
+    widthInches: 5,
+    heightInches: 5
+  },
+  config
+);
 ```
 
 ---
@@ -120,13 +170,14 @@ const fastest = await shipstack.getFastestService(request, config);
 ## Validate an Address
 
 ```ts
-const result = await shipstack.validateAddress({
+const result = await client.validateAddress({
   carrier: "fedex",
   address: {
-    street1: "123 Main St",
+    streetLines: ["123 Main St"],
     city: "New York",
-    state: "NY",
-    postalCode: "10001"
+    stateOrProvinceCode: "NY",
+    postalCode: "10001",
+    countryCode: "US"
   }
 });
 ```
@@ -136,7 +187,9 @@ const result = await shipstack.validateAddress({
 ## Track Shipments
 
 ```ts
-const tracking = await shipstack.trackShipment(
+import { trackShipment } from "shipstack";
+
+const tracking = await trackShipment(
   ["9400100000000000000000", "9400100000000000000001"],
   "usps",
   config
@@ -147,15 +200,15 @@ const tracking = await shipstack.trackShipment(
 
 ## Staged Shipments (Safe Mode)
 
-Generate a carrier‑specific shipment payload without purchasing a label.
+Generate a carrier-specific shipment payload without purchasing a label.
 
 This is recommended for:
 
-- Storefronts  
-- Email workflows  
-- Serverless environments  
-- Custom dashboards  
-- Manual label creation  
+- Storefronts
+- Email workflows
+- Serverless environments
+- Custom dashboards
+- Manual label creation
 
 ```ts
 import { buildShipment } from "shipstack";
@@ -164,14 +217,33 @@ const staged = await buildShipment(
   {
     carrier: "fedex",
     serviceCode: "FEDEX_GROUND",
-    fromAddress: { ... },
-    toAddress: { ... },
-    package: { ... }
+    fromAddress: {
+      name: "Sender Name",
+      streetLines: ["123 Warehouse Rd"],
+      city: "Los Angeles",
+      stateOrProvinceCode: "CA",
+      postalCode: "90001",
+      countryCode: "US"
+    },
+    toAddress: {
+      name: "Customer Name",
+      streetLines: ["55 W 46th St"],
+      city: "New York",
+      stateOrProvinceCode: "NY",
+      postalCode: "10036",
+      countryCode: "US"
+    },
+    package: {
+      weightOz: 32,
+      lengthInches: 12,
+      widthInches: 8,
+      heightInches: 4
+    }
   },
   config
 );
 
-console.log(staged.payload); // FedEx Ship API request body
+console.log(staged.payload);
 ```
 
 This does not call the carrier API.  
@@ -186,7 +258,35 @@ This method purchases a real label and must only be used in secure backend envir
 ```ts
 import { createShipment } from "shipstack";
 
-const shipment = await createShipment(request, config);
+const shipment = await createShipment(
+  {
+    carrier: "ups",
+    serviceCode: "UPS_GROUND",
+    fromAddress: {
+      name: "Sender Name",
+      streetLines: ["123 Warehouse Rd"],
+      city: "Los Angeles",
+      stateOrProvinceCode: "CA",
+      postalCode: "90001",
+      countryCode: "US"
+    },
+    toAddress: {
+      name: "Customer Name",
+      streetLines: ["55 W 46th St"],
+      city: "New York",
+      stateOrProvinceCode: "NY",
+      postalCode: "10036",
+      countryCode: "US"
+    },
+    package: {
+      weightOz: 48,
+      lengthInches: 14,
+      widthInches: 10,
+      heightInches: 6
+    }
+  },
+  config
+);
 
 console.log(shipment.label.base64);
 console.log(shipment.trackingNumber);
@@ -194,7 +294,7 @@ console.log(shipment.trackingNumber);
 
 Warning:  
 Do not call this from the frontend.  
-This charges the merchant’s carrier account.
+This charges the merchant's carrier account.
 
 ---
 
@@ -214,31 +314,68 @@ This charges the merchant’s carrier account.
 ## Functional API (Stateless)
 
 ```ts
-import { getRates, validateAddress, trackShipment } from "shipstack";
+import {
+  getRates,
+  getBestValueRate,
+  getFastestService,
+  predictCarrier,
+  validateAddress,
+  trackShipment
+} from "shipstack";
 
-const rates = await getRates(request, config);
+const rates = await getRates(
+  {
+    carrier: "usps",
+    originZip: "90210",
+    destZip: "10001",
+    weightOz: 16,
+    lengthInches: 10,
+    widthInches: 5,
+    heightInches: 5
+  },
+  config
+);
+const carrier = predictCarrier("1Z9999999999999999");
 ```
 
 ---
 
-```typescript
+## Direct Carrier Access
+
+Only the low-level rate clients are exported directly from the package entrypoint.
+
+```ts
 import { createUspsRatesClient } from "shipstack";
 
-const usps = createUspsRatesClient(config.usps); 
-
-const rawResponse = await usps.getRates({ ... });
+const usps = createUspsRatesClient(config.usps);
+const rawResponse = await usps.getRates({ /* USPS request payload */ });
 ```
+
+---
+
+## Error Handling
 
 ```ts
 import { ShipstackError } from "shipstack";
 
-try { 
-  await shipstack.getRates(req); 
-} catch (error) { 
-  if (error instanceof ShipstackError) { 
-    console.error(error.message); 
-    console.error(error carrier);  // usps | fedex | ups 
-  } 
+const request = {
+  carrier: "usps",
+  originZip: "90210",
+  destZip: "10001",
+  weightOz: 16,
+  lengthInches: 10,
+  widthInches: 5,
+  heightInches: 5
+};
+
+try {
+  await client.getRates(request);
+} catch (error) {
+  if (error instanceof ShipstackError) {
+    console.error(error.message);
+    console.error(error.carrier);
+    console.error(error.cause);
+  }
 }
 ```
 
@@ -246,11 +383,11 @@ try {
 
 ## Development
 
-**npm run generate:usps**    (sync USPS v3 specs)  
+**npm run generate:usps**    (sync USPS v3 specs)
 
-**npm run generate:fedex**  (sync local FedEx specs)  
+**npm run generate:fedex**   (sync local FedEx specs)
 
-**npm run generate:ups**     (sync local UPS specs)  
+**npm run generate:ups**     (sync local UPS specs)
 
 **npm run generate:all**     (sync all carriers)
 
@@ -265,11 +402,11 @@ npm run generate:all
 
 ## Documentation
 
-- docs/index.md  
-- docs/API.md  
-- docs/config.example.ts  
-- CHANGELOG.md  
-- CONTRIBUTING.md  
+- docs/index.md
+- docs/API.md
+- docs/config.example.ts
+- CHANGELOG.md
+- CONTRIBUTING.md
 
 ---
 

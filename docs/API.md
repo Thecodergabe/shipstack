@@ -1,12 +1,12 @@
 # Shipstack API Reference
 
-This document provides a complete reference for all public Shipstack APIs, including the stateful `ShippingClient`, the functional API, direct carrier clients, and all core types.
+This document covers the public Shipstack surface shipped through the npm entrypoint: `ShippingClient`, `ShippingManager`, the functional API, exported rate clients, and the core types.
 
 ---
 
 ## ShippingClient
 
-The `ShippingClient` is a stateful orchestrator that stores configuration and exposes high‑level workflow methods.
+The `ShippingClient` is the primary stateful API for direct per-carrier operations.
 
 ### Constructor
 
@@ -17,145 +17,136 @@ new ShippingClient(config: ShippingConfig)
 ### Methods
 
 #### `getRates(request: RateRequest): Promise<NormalizedRate[]>`
-Fetches normalized rates from the specified carrier.
+Fetches normalized rates for the carrier specified on `request.carrier`.
 
-#### `getBestValueRate(request: RateRequest): Promise<NormalizedRate>`
-Returns the cheapest rate based on total cost.
-
-#### `getFastestService(request: RateRequest): Promise<NormalizedRate>`
-Returns the fastest rate based on estimated delivery days.
-
-#### `validateAddress(request: AddressValidationRequest): Promise<NormalizedAddress>`
+#### `validateAddress(request: AddressValidationRequest): Promise<AddressValidationResult>`
 Validates an address using the selected carrier.
 
-#### `trackShipment(trackingNumbers: string[], carrier: Carrier): Promise<NormalizedTracking[]>`
+#### `track(trackingNumbers: string | string[], carrier: Carrier): Promise<NormalizedTracking[]>`
 Tracks one or more shipments with automatic batching and normalization.
 
-#### `buildShipment(request: ShipmentRequest): Promise<StagedShipment>`
-Generates a carrier‑specific shipment payload **without purchasing a label**.
+#### `getBestValue(request: RateRequest): Promise<NormalizedRate | null>`
+Returns the cheapest rate for the selected carrier.
 
-Safe for storefronts, serverless, and email workflows.
+#### `getFastest(request: RateRequest): Promise<NormalizedRate | null>`
+Returns the fastest rate for the selected carrier.
+
+#### `buildShipment(request: ShipmentRequest): Promise<StagedShipment>`
+Builds a carrier-specific shipment payload without purchasing a label.
 
 #### `createShipment(request: ShipmentRequest): Promise<NormalizedShipment>`
 Creates an actual shipment and purchases a real label.
 
-Backend‑only.
+#### `ShippingClient.predict(trackingNumber: string): Carrier | "unknown"`
+Static helper that predicts the carrier from a tracking number pattern.
+
+---
+
+## ShippingManager
+
+`ShippingManager` is the advanced stateful helper for cross-carrier checkout workflows.
+
+### Constructor
+
+```ts
+new ShippingManager(config: ShippingConfig)
+```
+
+### Methods
+
+#### `getRankedRates(request: Omit<RateRequest, "carrier">, carriers: Carrier[]): Promise<NormalizedRate[]>`
+Queries multiple carriers, merges the results, sorts by price, and marks `isCheapest` and `isFastest` when available.
+
+#### `validateAddress(request: AddressValidationRequest): Promise<AddressValidationResult>`
+Convenience wrapper around the address API using the manager's config.
+
+#### `track(trackingNumbers: string | string[], carrier: Carrier): Promise<NormalizedTracking[]>`
+Convenience wrapper around the tracking API using the manager's config.
 
 ---
 
 ## Functional API
 
-The functional API provides stateless equivalents to the `ShippingClient` methods.
-
-### Rates
+The functional API exposes stateless helpers when you do not want to retain a client instance.
 
 ```ts
 getRates(request: RateRequest, config: ShippingConfig): Promise<NormalizedRate[]>
-```
-
-### Address Validation
-
-```ts
-validateAddress(request: AddressValidationRequest, config: ShippingConfig): Promise<NormalizedAddress>
-```
-
-### Tracking
-
-```ts
-trackShipment(trackingNumbers: string[], carrier: Carrier, config: ShippingConfig): Promise<NormalizedTracking[]>
-```
-
-### Staged Shipments
-
-```ts
+validateAddress(request: AddressValidationRequest, config: ShippingConfig): Promise<AddressValidationResult>
+trackShipment(trackingNumbers: string | string[], carrier: Carrier, config: ShippingConfig): Promise<NormalizedTracking[]>
+getBestValueRate(request: RateRequest, config: ShippingConfig): Promise<NormalizedRate | null>
+getFastestService(request: RateRequest, config: ShippingConfig): Promise<NormalizedRate | null>
+predictCarrier(trackingNumber: string): Carrier | "unknown"
 buildShipment(request: ShipmentRequest, config: ShippingConfig): Promise<StagedShipment>
-```
-
-### Actual Shipments
-
-```ts
 createShipment(request: ShipmentRequest, config: ShippingConfig): Promise<NormalizedShipment>
 ```
 
 ---
 
-## Direct Carrier Clients
+## Direct Carrier Access
 
-These provide low‑level access to the raw carrier APIs.  
-They return the carrier’s native response format.
-
-### USPS
+Only the low-level rate clients are exported directly from the package entrypoint.
 
 ```ts
 createUspsRatesClient(config: UspsConfig)
-createUspsTrackingClient(config: UspsConfig)
-createUspsAddressClient(config: UspsConfig)
-createUspsLabelsClient(config: UspsConfig)
-```
-
-### FedEx
-
-```ts
 createFedexRatesClient(config: FedexConfig)
-createFedexTrackingClient(config: FedexConfig)
-createFedexShipClient(config: FedexConfig)
-```
-
-### UPS
-
-```ts
 createUpsRatesClient(config: UpsConfig)
-createUpsTrackingClient(config: UpsConfig)
-createUpsShipClient(config: UpsConfig)
 ```
 
 ---
 
-## Types
+## Core Types
 
 ### `ShippingConfig`
-Carrier credentials and configuration.
 
 ```ts
 type ShippingConfig = {
+  environment?: "sandbox" | "production";
   usps?: {
-    apiKey: string;
-    apiSecret: string;
-    baseUrl: string;
+    enabled: boolean;
+    clientId: string;
+    clientSecret: string;
+    apiKey?: string;
+    baseUrl?: string;
+    authUrl?: string;
+    labelsBaseUrl?: string;
   };
   fedex?: {
-    apiKey: string;
-    secretKey: string;
+    enabled: boolean;
+    clientId: string;
+    clientSecret: string;
     accountNumber: string;
+    baseUrl?: string;
   };
   ups?: {
-    apiKey: string;
-    apiSecret: string;
+    enabled: boolean;
+    clientId: string;
+    clientSecret: string;
     accountNumber: string;
+    baseUrl?: string;
   };
 };
 ```
 
 ### `RateRequest`
-Origin, destination, and parcel details.
+Origin, destination, weight, and package dimensions for a single-carrier rate lookup.
+
+### `AddressValidationRequest`
+Carrier plus a structured postal address using `streetLines`, `stateOrProvinceCode`, and `countryCode`.
+
+### `AddressValidationResult`
+Top-level address validation response with `isValid`, optional `normalizedAddress`, and optional `messages`.
 
 ### `NormalizedRate`
 Unified rate object returned by all carriers.
 
-### `AddressValidationRequest`
-Address fields for validation.
-
-### `NormalizedAddress`
-Standardized address validation result.
-
 ### `NormalizedTracking`
-Normalized tracking event and status.
+Normalized tracking status and event history.
 
 ### `ShipmentRequest`
-Details required to create a shipment.
+Carrier, service, from/to addresses, and package details required to build or purchase a shipment.
 
 ### `StagedShipment`
-Carrier‑specific payload returned by `buildShipment`.
+Carrier-specific payload returned by `buildShipment`.
 
 ### `NormalizedShipment`
 Unified shipment result returned by `createShipment`.
@@ -165,22 +156,21 @@ Unified shipment result returned by `createShipment`.
 ## Error Types
 
 ### `ShipstackError`
-Base error type for all Shipstack operations.
+Base error type for Shipstack operations.
 
 Properties include:
 
 - `message`
-- `carrier` (usps | fedex | ups)
-- `code`
-- `details`
+- `carrier` (`"usps" | "fedex" | "ups"`)
+- `cause`
 
 ### `ThrottlingError`
-Thrown when a carrier enforces rate limits (e.g., UPS tracking).
+Extends `ShipstackError` and adds `retryAfter?: number` when a carrier returns a throttling signal.
 
 ---
 
 ## Full Type Definitions
 
-See the `src/types/` directory for complete TypeScript definitions.
+The published package exposes its full TypeScript surface through `dist/index.d.ts` and `dist/index.d.mts`.
 
 ---

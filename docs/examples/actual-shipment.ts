@@ -10,7 +10,7 @@
  */
 
 import { createShipment } from "shipstack";
-import { config } from "./config.example";
+import { config } from "../config.example";
 
 async function exampleActualShipment() {
   const shipment = await createShipment(
@@ -20,27 +20,27 @@ async function exampleActualShipment() {
 
       fromAddress: {
         name: "Sender Name",
-        street1: "123 Warehouse Rd",
+        streetLines: ["123 Warehouse Rd"],
         city: "Los Angeles",
-        state: "CA",
-        postalCode: "90001"
+        stateOrProvinceCode: "CA",
+        postalCode: "90001",
+        countryCode: "US"
       },
 
       toAddress: {
         name: "Customer Name",
-        street1: "55 W 46th St",
+        streetLines: ["55 W 46th St"],
         city: "New York",
-        state: "NY",
-        postalCode: "10036"
+        stateOrProvinceCode: "NY",
+        postalCode: "10036",
+        countryCode: "US"
       },
 
       package: {
         weightOz: 48,
-        dimensions: {
-          length: 14,
-          width: 10,
-          height: 6
-        }
+        lengthInches: 14,
+        widthInches: 10,
+        heightInches: 6
       }
     },
     config
@@ -49,7 +49,7 @@ async function exampleActualShipment() {
   console.log("Carrier:", shipment.carrier);
   console.log("Tracking Number:", shipment.trackingNumber);
   console.log("Service Code:", shipment.serviceCode);
-  console.log("Cost:", shipment.cost);
+  console.log("Charges:", shipment.charges);
 
   // Label is returned as base64
   console.log("Label Format:", shipment.label.format);

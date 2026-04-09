@@ -1,7 +1,7 @@
 /**
  * Shipstack: The Universal Shipping SDK
  * * Primary entry point for the Shipstack library. 
- * Provides a stateful 'ShippingClient' for persistent configuration,
+ * Provides a stateful 'ShippingClient', the advanced 'ShippingManager',
  * and stateless functional exports for serverless integrations.
  * * @module Shipstack
  */
@@ -12,7 +12,10 @@ import {
   NormalizedRate, 
   AddressValidationRequest, 
   AddressValidationResult,
-  NormalizedTracking
+  NormalizedTracking,
+  ShipmentRequest,
+  StagedShipment,
+  NormalizedShipment
 } from "@/types/index";
 
 /**
@@ -93,14 +96,14 @@ export class ShippingClient {
   /**
    * Builds a staged shipment payload for the specified carrier without purchasing a label.
    */
-  async buildShipment(request: any): Promise<any> {
+  async buildShipment(request: ShipmentRequest): Promise<StagedShipment> {
     return _buildShipment(request, this.config);
   }
 
   /**
    * Creates a shipping label and returns a normalized shipment object.
    */
-  async createShipment(request: any): Promise<any> {
+  async createShipment(request: ShipmentRequest): Promise<NormalizedShipment> {
     return _createShipment(request, this.config);
   }
 }

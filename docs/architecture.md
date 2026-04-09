@@ -138,12 +138,14 @@ Shipstack exposes two public interfaces:
 ### Stateful API
 
 ```ts
-const shipstack = new ShippingClient(config);
+const client = new ShippingClient(config);
+const manager = new ShippingManager(config);
 
-shipstack.getRates(...)
-shipstack.trackShipment(...)
-shipstack.buildShipment(...)
-shipstack.createShipment(...)
+client.getRates(...)
+client.track(...)
+client.buildShipment(...)
+client.createShipment(...)
+manager.getRankedRates(...)
 ```
 
 ### Functional API

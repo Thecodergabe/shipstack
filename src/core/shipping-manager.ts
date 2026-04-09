@@ -52,12 +52,12 @@ export class ShippingManager {
   /**
    * Fetches, flattens, and ranks rates from enabled carriers.
    * * Executes carrier requests in parallel and identifies value-added options.
-   * * @param {RateRequest} req - The standardized shipment details.
+   * * @param req - The standardized shipment details, excluding the carrier.
    * @param {Array<"usps" | "fedex" | "ups">} carriers - List of carriers to query.
    * @returns {Promise<NormalizedRate[]>} A sorted list of rates by cost (ascending).
    */
   async getRankedRates(
-    req: RateRequest, 
+    req: Omit<RateRequest, "carrier">,
     carriers: ("usps" | "fedex" | "ups")[]
   ): Promise<NormalizedRate[]> {
     const promises = carriers.map(c => 

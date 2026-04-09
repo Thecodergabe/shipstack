@@ -1,33 +1,27 @@
 # Error Handling in Shipstack
 
-Shipstack provides a unified, predictable error‑handling system across all carriers (USPS, FedEx, UPS).  
-All errors thrown by Shipstack extend from a single base class: `ShipstackError`.
-
-This document explains the error types, their structure, and how to handle them correctly.
+Shipstack provides a unified, predictable error-handling system across USPS, FedEx, and UPS.  
+All Shipstack-specific errors extend from `ShipstackError`.
 
 ---
 
 ## Overview
 
-Shipstack errors fall into three categories:
+Shipstack errors fall into two main categories:
 
-1. **ShipstackError** — the base error for all failures  
-2. **Carrier Errors** — normalized errors from USPS, FedEx, or UPS  
-3. **ThrottlingError** — raised when a carrier enforces rate limits  
+1. **ShipstackError** for normalized library failures
+2. **ThrottlingError** when a carrier enforces rate limits
 
-All errors are normalized so you don’t have to deal with inconsistent carrier formats.
+Carrier-specific details are preserved on the error's `cause` property when available.
 
 ---
 
-## Base Error: ShipstackError
-
-All errors thrown by Shipstack extend from this class.
+## Base Error: `ShipstackError`
 
 ```ts
 class ShipstackError extends Error {
-  carrier?: "usps" | "fedex" | "ups";
-  code?: string;
-  details?: unknown;
+  carrier: "usps" | "fedex" | "ups";
+  cause?: unknown;
 }
 ```
 
@@ -35,10 +29,9 @@ class ShipstackError extends Error {
 
 | Field | Description |
 |-------|-------------|
-| `message` | Human‑readable error message |
-| `carrier` | The carrier that caused the error (if applicable) |
-| `code` | Carrier‑specific or normalized error code |
-| `details` | Raw carrier response or additional metadata |
+| `message` | Human-readable error message |
+| `carrier` | The carrier associated with the failure |
+| `cause` | Raw upstream error, response, or context when available |
 
 ---
 
@@ -46,65 +39,33 @@ class ShipstackError extends Error {
 
 ```ts
 try {
-  await shipstack.getRates(request);
+  await client.getRates(request);
 } catch (err) {
   if (err instanceof ShipstackError) {
     console.error("Carrier:", err.carrier);
-    console.error("Code:", err.code);
     console.error("Message:", err.message);
+    console.error("Cause:", err.cause);
   }
 }
 ```
 
 ---
 
-## Carrier Errors
+## `ThrottlingError`
 
-Shipstack normalizes carrier‑specific errors into a consistent structure.
-
-### USPS Errors
-
-Common causes:
-
-- Invalid ZIP codes  
-- Missing address fields  
-- USPS API downtime  
-- Invalid credentials  
-
-### FedEx Errors
-
-Common causes:
-
-- Authentication failures  
-- Invalid service codes  
-- Missing account number  
-- Address validation failures  
-
-### UPS Errors
-
-Common causes:
-
-- OAuth token failures  
-- Invalid shipper number  
-- Rate‑limit enforcement  
-- Missing or invalid dimensions  
-
----
-
-## ThrottlingError
-
-UPS and FedEx may enforce rate limits.  
-Shipstack throws a `ThrottlingError` when this happens.
+UPS and FedEx may enforce rate limits. Shipstack throws a `ThrottlingError` when this happens.
 
 ```ts
-class ThrottlingError extends ShipstackError {}
+class ThrottlingError extends ShipstackError {
+  retryAfter?: number;
+}
 ```
 
 ### When It Occurs
 
-- Too many UPS tracking requests in a short period  
-- FedEx rate‑limit enforcement  
-- USPS bulk tracking overload  
+- Too many UPS tracking requests in a short period
+- FedEx rate-limit enforcement
+- Carrier-side retry-after signals
 
 ### Example
 
@@ -113,7 +74,7 @@ try {
   await trackShipment(numbers, "ups", config);
 } catch (err) {
   if (err instanceof ThrottlingError) {
-    console.log("Carrier is rate limiting. Try again later.");
+    console.log("Carrier is rate limiting. Retry after:", err.retryAfter);
   }
 }
 ```
@@ -124,43 +85,35 @@ try {
 
 ### Rates
 
-- Missing or invalid ZIP codes  
-- Unsupported service combinations  
-- Carrier downtime  
+- Missing or invalid ZIP codes
+- Unsupported service combinations
+- Carrier downtime
 
 ### Tracking
 
-- Invalid tracking numbers  
-- Carrier throttling (UPS)  
-- Unsupported formats  
+- Invalid tracking numbers
+- Carrier throttling
+- Upstream authentication or network failures
 
 ### Address Validation
 
-- Missing required fields  
-- Invalid postal codes  
-- Ambiguous addresses  
+- Missing required fields
+- Invalid postal codes
+- Ambiguous addresses
 
 ### Shipments
 
 #### Staged Shipments
-Errors occur only if:
-- Required fields are missing  
-- Service codes are invalid  
-
-No carrier calls are made.
+Errors occur only if request data is incomplete or invalid.
 
 #### Actual Shipments
-Errors may occur due to:
-- Authentication failures  
-- Invalid shipment payloads  
-- Carrier downtime  
-- Billing issues  
+Errors may occur due to authentication failures, invalid shipment payloads, carrier downtime, or billing issues.
 
 ---
 
 ## Best Practices
 
-### Always Catch ShipstackError
+### Always Catch `ShipstackError`
 
 ```ts
 try {
@@ -172,14 +125,15 @@ try {
 }
 ```
 
-### Log `carrier` and `code`
+### Log `carrier` and `cause`
 
-These two fields are the most useful for debugging.
+These are the most useful fields for debugging carrier-specific failures.
 
-### Never Expose Raw Carrier Errors to Users
+### Do Not Expose Raw Upstream Errors to End Users
+Prefer logging `cause` internally and returning a safe application-level message to the frontend.
 
 Use `message` for user‑facing output.  
-Use `details` for internal logging.
+Use `cause` for internal logging.
 
 ---
 

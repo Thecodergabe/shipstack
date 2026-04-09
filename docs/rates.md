@@ -1,7 +1,7 @@
 # Rates in Shipstack
 
 Shipstack provides a unified interface for fetching shipping rates from USPS, FedEx, and UPS.  
-All rate responses are normalized into a consistent structure, regardless of carrier‑specific formats.
+All rate responses are normalized into a consistent structure, regardless of carrier-specific formats.
 
 ---
 
@@ -10,36 +10,33 @@ All rate responses are normalized into a consistent structure, regardless of car
 ```ts
 type RateRequest = {
   carrier: "usps" | "fedex" | "ups";
-  fromPostalCode: string;
-  toPostalCode: string;
+  originZip: string;
+  destZip: string;
   weightOz: number;
-  dimensions?: {
-    length: number;
-    width: number;
-    height: number;
-  };
+  lengthInches: number;
+  widthInches: number;
+  heightInches: number;
+  destCountryCode?: string;
 };
 ```
 
-### Notes
-
-- `dimensions` are optional for carriers that support weight‑only services.
-- All units are standardized:
-  - Weight → ounces  
-  - Dimensions → inches  
+Carrier-specific optional fields such as `mailClass`, `pickupType`, `packagingType`, and `rateRequestType` are also supported when needed.
 
 ---
 
 ## Fetching Rates
 
-### Using the ShippingClient
+### Using `ShippingClient`
 
 ```ts
-const rates = await shipstack.getRates({
+const rates = await client.getRates({
   carrier: "usps",
-  fromPostalCode: "90210",
-  toPostalCode: "10001",
-  weightOz: 16
+  originZip: "90210",
+  destZip: "10001",
+  weightOz: 16,
+  lengthInches: 10,
+  widthInches: 5,
+  heightInches: 5
 });
 ```
 
@@ -55,97 +52,94 @@ Both methods return the same normalized structure.
 
 ---
 
+## Ranking Across Carriers
+
+Use `ShippingManager` when you want Shipstack to fetch from multiple carriers and rank the results for you.
+
+```ts
+const ranked = await manager.getRankedRates(
+  {
+    originZip: "90210",
+    destZip: "10001",
+    weightOz: 16,
+    lengthInches: 10,
+    widthInches: 5,
+    heightInches: 5
+  },
+  ["usps", "fedex", "ups"]
+);
+```
+
+---
+
 ## Normalized Rate Structure
 
 ```ts
 type NormalizedRate = {
-  carrier: string;
+  carrier: "usps" | "fedex" | "ups";
   serviceCode: string;
   serviceName: string;
-  deliveryDays: number | null;
+  deliveryDays?: number;
+  estimatedArrival?: string;
+  isFastest?: boolean;
+  isCheapest?: boolean;
+  guaranteed?: boolean;
   cost: {
     amount: number;
     currency: string;
   };
+  raw?: unknown;
 };
 ```
 
 ### Field Notes
 
-- `deliveryDays` may be `null` if the carrier does not provide an estimate.
-- `serviceCode` is the carrier’s internal code (e.g., `"FEDEX_GROUND"`).
-- `serviceName` is a human‑readable label (e.g., `"FedEx Ground"`).
-- `cost.amount` is always a number, never a string.
+- `deliveryDays` is optional when a carrier does not provide an estimate.
+- `estimatedArrival` is typically an ISO-8601 string when available.
+- `isCheapest` and `isFastest` are added by `ShippingManager#getRankedRates`.
+- `cost.amount` is always numeric.
 
 ---
 
-## Best Value Rate
+## Best Value and Fastest Helpers
 
-Returns the cheapest available rate.
+These helpers work on a single-carrier `RateRequest`.
 
 ```ts
-const best = await shipstack.getBestValueRate(request);
+import { getBestValueRate, getFastestService } from "shipstack";
+
+const cheapest = await getBestValueRate(request, config);
+const fastest = await getFastestService(request, config);
 ```
+
+Both helpers return `null` when no valid rates are available.
 
 ---
 
-## Fastest Service
-
-Returns the service with the lowest delivery estimate.
-
-```ts
-const fastest = await shipstack.getFastestService(request);
-```
-
----
-
-## Multi‑Carrier Workflows
-
-To compare across carriers, call `getRates` for each carrier and merge the results:
-
-```ts
-const carriers = ["usps", "fedex", "ups"] as const;
-
-const allRates = (
-  await Promise.all(
-    carriers.map(carrier =>
-      shipstack.getRates({ ...request, carrier })
-    )
-  )
-).flat();
-```
-
-Then apply your own ranking logic or use:
-
-- `getBestValueRate`
-- `getFastestService`
-
----
-
-## Carrier‑Specific Notes
+## Carrier-Specific Notes
 
 ### USPS
-- Supports weight‑only and dimensional services.
 - Delivery estimates may be missing for some services.
+- USPS-specific flags such as `mailClass` and `nonStandard` are supported.
 
 ### FedEx
 - Requires `accountNumber` in config.
-- Provides detailed delivery estimates.
+- Supports FedEx-specific options such as `pickupType`, `dropoffType`, and `rateRequestType`.
 
 ### UPS
 - Requires `accountNumber` in config.
-- Some services require dimensions even for lightweight parcels.
+- Dimensions are especially important for many UPS services.
 
 ---
 
 ## Summary
 
-Shipstack’s rate system provides:
+Shipstack's rate system provides:
 
-- A unified request format  
-- A normalized response structure  
-- Optional ranking helpers  
-- Full support for USPS, FedEx, and UPS  
-- Compatibility with both stateful and functional APIs  
+- A unified request format
+- A normalized response structure
+- Single-carrier helper methods
+- Multi-carrier ranking through `ShippingManager`
+- Full support for USPS, FedEx, and UPS
 
 ---

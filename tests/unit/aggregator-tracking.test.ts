@@ -16,7 +16,11 @@ vi.mock('../../src/usps/tracking/client', () => ({
 describe('Tracking Aggregator', () => {
   it('should track a batch of USPS numbers using fake config', async () => {
     // 2. Mock the config helper so it doesn't throw "Missing Key"
-    vi.spyOn(configMap, 'getUspsConfig').mockReturnValue({ apiKey: 'fake', apiSecret: 'fake' } as any);
+    vi.spyOn(configMap, 'getUspsConfig').mockReturnValue({
+      enabled: true,
+      clientId: 'fake-client',
+      clientSecret: 'fake-secret'
+    } as any);
 
     const aggregator = new TrackingAggregator();
     const results = await aggregator.trackUspsBatch(['9400']);

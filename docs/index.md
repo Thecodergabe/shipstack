@@ -59,25 +59,32 @@ npm install shipstack
 ## Quick Start
 
 ```ts
-import { ShippingClient } from "shipstack";
+import { ShippingClient, ShippingManager } from "shipstack";
 
-const shipstack = new ShippingClient({
+const config = {
+  environment: "sandbox",
   usps: {
-    apiKey: "YOUR_USPS_KEY",
-    apiSecret: "YOUR_USPS_SECRET",
-    baseUrl: "https://api.usps.com"
+    enabled: true,
+    clientId: "YOUR_USPS_CLIENT_ID",
+    clientSecret: "YOUR_USPS_CLIENT_SECRET",
+    baseUrl: "https://sandbox.api.usps.com"
   },
   fedex: {
-    apiKey: "YOUR_FEDEX_KEY",
-    secretKey: "YOUR_FEDEX_SECRET",
-    accountNumber: "YOUR_FEDEX_ACCOUNT"
+    enabled: true,
+    clientId: "YOUR_FEDEX_CLIENT_ID",
+    clientSecret: "YOUR_FEDEX_CLIENT_SECRET",
+    accountNumber: "YOUR_FEDEX_ACCOUNT_NUMBER"
   },
   ups: {
-    apiKey: "YOUR_UPS_KEY",
-    apiSecret: "YOUR_UPS_SECRET",
-    accountNumber: "YOUR_UPS_ACCOUNT"
+    enabled: true,
+    clientId: "YOUR_UPS_CLIENT_ID",
+    clientSecret: "YOUR_UPS_CLIENT_SECRET",
+    accountNumber: "YOUR_UPS_ACCOUNT_NUMBER"
   }
-});
+};
+
+const client = new ShippingClient(config);
+const manager = new ShippingManager(config);
 ```
 
 ---
@@ -96,30 +103,51 @@ See `docs/config.example.ts` for a complete template.
 ### Get Rates
 
 ```ts
-const rates = await shipstack.getRates({
+const rates = await client.getRates({
   carrier: "usps",
-  fromPostalCode: "90210",
-  toPostalCode: "10001",
-  weightOz: 16
+  originZip: "90210",
+  destZip: "10001",
+  weightOz: 16,
+  lengthInches: 10,
+  widthInches: 5,
+  heightInches: 5
 });
+```
+
+### Rank Rates Across Carriers
+
+```ts
+const rankedRates = await manager.getRankedRates(
+  {
+    originZip: "90210",
+    destZip: "10001",
+    weightOz: 16,
+    lengthInches: 10,
+    widthInches: 5,
+    heightInches: 5
+  },
+  ["usps", "fedex", "ups"]
+);
 ```
 
 ### Track Shipments
 
 ```ts
-const tracking = await shipstack.trackShipment(
-  ["9400100000000000000000"],
-  "usps",
-  config
-);
+const tracking = await client.track(["9400100000000000000000"], "usps");
 ```
 
 ### Validate Address
 
 ```ts
-const result = await shipstack.validateAddress({
+const result = await client.validateAddress({
   carrier: "fedex",
-  address: { ... }
+  address: {
+    streetLines: ["123 Main St"],
+    city: "New York",
+    stateOrProvinceCode: "NY",
+    postalCode: "10001",
+    countryCode: "US"
+  }
 });
 ```
 
@@ -141,7 +169,36 @@ const raw = await usps.getRates({ ... });
 ```ts
 import { getRates, validateAddress, trackShipment } from "shipstack";
 
-const rates = await getRates(request, config);
+const rates = await getRates(
+  {
+    carrier: "usps",
+    originZip: "90210",
+    destZip: "10001",
+    weightOz: 16,
+    lengthInches: 10,
+    widthInches: 5,
+    heightInches: 5
+  },
+  config
+);
+```
+
+### ShippingManager
+
+`ShippingManager` is the class-only helper for ranked multi-carrier checkout workflows.
+
+```ts
+const ranked = await manager.getRankedRates(
+  {
+    originZip: "90210",
+    destZip: "10001",
+    weightOz: 16,
+    lengthInches: 10,
+    widthInches: 5,
+    heightInches: 5
+  },
+  ["usps", "fedex", "ups"]
+);
 ```
 
 ### Staged Shipments (Safe Mode)
@@ -151,7 +208,7 @@ Generates a carrier‑specific payload without purchasing a label.
 ```ts
 import { buildShipment } from "shipstack";
 
-const staged = await buildShipment(request, config);
+const staged = await buildShipment({ /* ShipmentRequest */ }, config);
 ```
 
 ### Actual Shipments (Backend Only)
@@ -161,7 +218,7 @@ Purchases a real label.
 ```ts
 import { createShipment } from "shipstack";
 
-const shipment = await createShipment(request, config);
+const shipment = await createShipment({ /* ShipmentRequest */ }, config);
 ```
 
 ---
@@ -171,8 +228,18 @@ const shipment = await createShipment(request, config);
 All errors are standardized as `ShipstackError`.
 
 ```ts
+import { ShipstackError } from "shipstack";
+
 try {
-  await shipstack.getRates(req);
+  await client.getRates({
+    carrier: "usps",
+    originZip: "90210",
+    destZip: "10001",
+    weightOz: 16,
+    lengthInches: 10,
+    widthInches: 5,
+    heightInches: 5
+  });
 } catch (error) {
   if (error instanceof ShipstackError) {
     // handle

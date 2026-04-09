@@ -1,18 +1,33 @@
 // Mocks for Shipstack API types and clients
 
 export const mockConfig = {
-  usps: { apiKey: 'test', apiSecret: 'test', baseUrl: 'https://sandbox.api.usps.com' },
-  fedex: { apiKey: 'test', secretKey: 'test' },
-  ups: { apiKey: 'test', apiSecret: 'test' }
+  usps: {
+    enabled: true,
+    clientId: 'test-usps-client',
+    clientSecret: 'test-usps-secret',
+    baseUrl: 'https://sandbox.api.usps.com'
+  },
+  fedex: {
+    enabled: true,
+    clientId: 'test-fedex-client',
+    clientSecret: 'test-fedex-secret',
+    accountNumber: '123456789'
+  },
+  ups: {
+    enabled: true,
+    clientId: 'test-ups-client',
+    clientSecret: 'test-ups-secret',
+    accountNumber: '1A2B3C'
+  }
 };
 
 export const mockAddress = {
   name: 'John Doe',
   streetLines: ['1600 Amphitheatre Pkwy'],
   city: 'Mountain View',
-  state: 'CA',
+  stateOrProvinceCode: 'CA',
   postalCode: '94043',
-  country: 'US'
+  countryCode: 'US'
 };
 
 export const mockShipmentRequest = {

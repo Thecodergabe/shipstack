@@ -138,8 +138,11 @@ Regardless of carrier, tracking events become:
 ```ts
 {
   description: string;
-  location: string | null;
-  date: string;
+  dateTime: string;
+  city?: string;
+  stateOrProvinceCode?: string;
+  postalCode?: string;
+  countryCode?: string;
 }
 ```
 
@@ -154,9 +157,8 @@ Shipstack automatically:
 All carrier errors become `ShipstackError` with:
 
 - `carrier`  
-- `code`  
 - `message`  
-- `details`  
+- `cause`  
 
 ### 5. Unifying Shipment Workflows  
 Both staged and actual shipments use the same request structure, regardless of carrier.

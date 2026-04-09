@@ -11,34 +11,34 @@ All carrier responses are normalized into a consistent structure, regardless of 
 type AddressValidationRequest = {
   carrier: "usps" | "fedex" | "ups";
   address: {
-    street1: string;
-    street2?: string;
+    streetLines: string[];
     city: string;
-    state: string;
+    stateOrProvinceCode: string;
     postalCode: string;
-    country?: string; // defaults to "US"
+    countryCode: string;
   };
 };
 ```
 
 ### Notes
 
-- `country` defaults to `"US"` if omitted.
-- USPS may return corrected addresses.
-- FedEx and UPS may return validation messages or suggestions.
+- `streetLines` supports multiple address lines.
+- `countryCode` should be an ISO-3166-1 alpha-2 code such as `US`.
+- USPS, FedEx, and UPS may each return different levels of correction detail, but Shipstack normalizes the top-level response shape.
 
 ---
 
 ## Example
 
 ```ts
-const result = await shipstack.validateAddress({
+const result = await client.validateAddress({
   carrier: "fedex",
   address: {
-    street1: "123 Main St",
+    streetLines: ["123 Main St"],
     city: "New York",
-    state: "NY",
-    postalCode: "10001"
+    stateOrProvinceCode: "NY",
+    postalCode: "10001",
+    countryCode: "US"
   }
 });
 ```
@@ -55,57 +55,60 @@ const result = await validateAddress(request, config);
 
 ---
 
-## Normalized Address Structure
+## Address Validation Result
 
 ```ts
-type NormalizedAddress = {
+type AddressValidationResult = {
   isValid: boolean;
-
-  corrected?: {
+  normalizedAddress?: {
     street1: string;
     street2?: string;
     city: string;
     state: string;
     postalCode: string;
+    country: string;
+    isValid: boolean;
+    classification?: "RESIDENTIAL" | "COMMERCIAL" | "UNKNOWN";
+    isPoBox: boolean;
+    raw?: unknown;
   };
-
   messages?: string[];
+  raw?: unknown;
 };
 ```
 
 ### Field Notes
 
 - `isValid` indicates whether the carrier considers the address deliverable.
-- `corrected` is included when the carrier suggests a standardized version.
-- `messages` may include warnings, suggestions, or error descriptions.
+- `normalizedAddress` is included when the carrier returns a standardized address shape.
+- `messages` may include warnings, suggestions, or correction notes.
 
 ---
 
-## Carrier‑Specific Behavior
+## Carrier-Specific Behavior
 
 ### USPS
 - Often returns corrected addresses.
-- May normalize abbreviations (e.g., “ST” → “Street”).
-- Strongest validation for residential addresses.
+- May normalize abbreviations and formatting.
 
 ### FedEx
 - Provides detailed validation messages.
-- May return multiple suggestions for ambiguous addresses.
+- May classify an address as residential or commercial.
 
 ### UPS
-- Strict validation rules.
-- May require full ZIP+4 for certain regions.
+- Uses stricter validation rules for some addresses.
+- May require more complete postal information in edge cases.
 
 ---
 
 ## Summary
 
-Shipstack’s address validation system provides:
+Shipstack's address validation system provides:
 
-- A unified request format  
-- A normalized response structure  
-- Carrier‑specific corrections and messages  
-- Support for USPS, FedEx, and UPS  
-- Compatibility with both stateful and functional APIs  
+- A unified request format
+- A normalized top-level result
+- Optional corrected address data
+- Carrier-specific messages when available
+- Compatibility with both stateful and functional APIs
 
 ---

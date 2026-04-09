@@ -1,7 +1,7 @@
 # Tracking in Shipstack
 
 Shipstack provides a unified tracking interface for USPS, FedEx, and UPS.  
-All tracking responses are normalized into a consistent structure, regardless of carrier‑specific formats.
+All tracking responses are normalized into a consistent structure, regardless of carrier-specific formats.
 
 ---
 
@@ -9,7 +9,7 @@ All tracking responses are normalized into a consistent structure, regardless of
 
 ```ts
 trackShipment(
-  trackingNumbers: string[],
+  trackingNumbers: string | string[],
   carrier: "usps" | "fedex" | "ups",
   config: ShippingConfig
 )
@@ -19,7 +19,7 @@ You may track one or many tracking numbers at once.
 
 ---
 
-## Example
+## Functional Example
 
 ```ts
 import { trackShipment } from "shipstack";
@@ -30,18 +30,15 @@ const tracking = await trackShipment(
   config
 );
 
-console.log(tracking[0].status.description);
+console.log(tracking[0]?.status);
 ```
 
 ---
 
-## Using the ShippingClient
+## Using `ShippingClient`
 
 ```ts
-const tracking = await shipstack.trackShipment(
-  ["1Z9999999999999999"],
-  "ups"
-);
+const tracking = await client.track(["1Z9999999999999999"], "ups");
 ```
 
 ---
@@ -50,26 +47,27 @@ const tracking = await shipstack.trackShipment(
 
 ```ts
 type NormalizedTracking = {
+  carrier: "usps" | "fedex" | "ups";
   trackingNumber: string;
-  status: {
-    code: string;
-    description: string;
-    date: string | null;
-  };
+  status: string;
+  estimatedDelivery?: string;
   events: Array<{
     description: string;
-    location: string | null;
-    date: string;
+    dateTime: string;
+    city?: string;
+    stateOrProvinceCode?: string;
+    postalCode?: string;
+    countryCode?: string;
   }>;
+  raw?: unknown;
 };
 ```
 
 ### Field Notes
 
-- `status.code` is a normalized status (e.g., `"IN_TRANSIT"`, `"DELIVERED"`).
-- `status.description` is a human‑readable message.
-- `events` are sorted chronologically (oldest → newest).
-- `location` may be `null` if the carrier does not provide it.
+- `status` is a normalized high-level tracking state such as `IN_TRANSIT` or `DELIVERED`.
+- `estimatedDelivery` is optional when the carrier provides an ETA.
+- `events` contain the normalized event history returned by the carrier.
 
 ---
 
@@ -81,9 +79,9 @@ Shipstack automatically handles batching and concurrency rules:
 |--------|--------|----------|
 | USPS | 35 per request | Automatically chunks requests |
 | FedEx | 30 per request | Automatically chunks requests |
-| UPS | Single‑inquiry only | Concurrency‑limited to avoid lockouts |
+| UPS | Single-inquiry only | Concurrency-limited to avoid lockouts |
 
-You do not need to manually chunk tracking numbers — Shipstack handles it for you.
+You do not need to manually chunk tracking numbers. Shipstack handles it for you.
 
 ---
 
@@ -91,14 +89,14 @@ You do not need to manually chunk tracking numbers — Shipstack handles it for 
 
 ### USPS
 - Bulk tracking supports up to 35 items.
-- Some statuses may not include timestamps.
+- Some events may not include a full timestamp.
 
 ### FedEx
 - Provides detailed event history.
 - Supports up to 30 items per request.
 
 ### UPS
-- Only supports single‑inquiry tracking.
+- Only supports single-inquiry tracking.
 - Too many rapid requests may trigger rate limiting.
 - Shipstack automatically throttles UPS tracking calls.
 
@@ -106,12 +104,12 @@ You do not need to manually chunk tracking numbers — Shipstack handles it for 
 
 ## Summary
 
-Shipstack’s tracking system provides:
+Shipstack's tracking system provides:
 
-- A unified request format  
-- A normalized response structure  
-- Automatic batching and concurrency control  
-- Full support for USPS, FedEx, and UPS  
-- Compatibility with both stateful and functional APIs  
+- A unified request format
+- A normalized response structure
+- Automatic batching and concurrency control
+- Full support for USPS, FedEx, and UPS
+- Compatibility with both stateful and functional APIs
 
 ---

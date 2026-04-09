@@ -11,8 +11,8 @@ const mockAddressInput = {
 };
 
 const mockConfig = {
-  usps: { apiKey: 'x', apiSecret: 'y' },
-  fedex: { apiKey: 'x', secretKey: 'y' }
+  usps: { enabled: true, clientId: 'x', clientSecret: 'y' },
+  fedex: { enabled: true, clientId: 'x', clientSecret: 'y', accountNumber: '123456789' }
 };
 
 // Mock the internal client creator
